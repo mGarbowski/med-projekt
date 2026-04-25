@@ -9,13 +9,13 @@ class LCMAlgorithm:
     For finding frequent, closed itemsets in a transaction database.
     """
 
-    def __init__(self, minimum_support: float, dataset: Dataset):
-        if not (0 <= minimum_support <= 1):
-            raise ValueError("Minimum support value must be between 0 and 1")
+    def __init__(self, relative_minimum_support: float, dataset: Dataset):
+        if not (0 <= relative_minimum_support <= 1):
+            raise ValueError("Relative minimum support value must be between 0 and 1")
 
         self.discovered_itemsets = Itemsets()
         self.frequent_count = 0
-        self.minimum_support = int(minimum_support * len(dataset.transactions))
+        self.minimum_support = int(relative_minimum_support * len(dataset.transactions))
         self.dataset = dataset
         self.buckets = self._initial_occurrence_delivery(dataset)
 
@@ -26,9 +26,7 @@ class LCMAlgorithm:
     def _initial_occurrence_delivery(
         dataset: Dataset,
     ) -> tuple[list[Transaction], ...]:
-        buckets: tuple[list[Transaction], ...] = tuple(
-            [] for _ in range(dataset.max_item + 1)
-        )
+        buckets = tuple([] for _ in range(dataset.max_item + 1))
 
         for transaction in dataset.transactions:
             for item in transaction.items:
