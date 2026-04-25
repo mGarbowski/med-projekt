@@ -48,14 +48,27 @@ class BenchmarkResult:
     def aggregate(cls, results: list[SingleBenchmarkResult]):
         return cls(
             time=AggregatedValue.from_values([r.time_ns / 1000 for r in results], "ms"),
-            mem_before_current=AggregatedValue.from_values([r.mem_before_current / 1024 for r in results], "KiB"),
-            mem_before_peak=AggregatedValue.from_values([r.mem_before_peak / 1024 for r in results], "KiB"),
-            mem_after_current=AggregatedValue.from_values([r.mem_after_current / 1024 for r in results], "KiB"),
-            mem_after_peak=AggregatedValue.from_values([r.mem_after_peak / 1024 for r in results], "KiB"),
+            mem_before_current=AggregatedValue.from_values(
+                [r.mem_before_current / 1024 for r in results], "KiB"
+            ),
+            mem_before_peak=AggregatedValue.from_values(
+                [r.mem_before_peak / 1024 for r in results], "KiB"
+            ),
+            mem_after_current=AggregatedValue.from_values(
+                [r.mem_after_current / 1024 for r in results], "KiB"
+            ),
+            mem_after_peak=AggregatedValue.from_values(
+                [r.mem_after_peak / 1024 for r in results], "KiB"
+            ),
         )
 
     def summary(self):
-        return f"Time: {self.time}\nCurrent before: {self.mem_before_current}\nCurrent after: {self.mem_after_current}\n"
+        return (
+            f"Time: {self.time}\n"
+            f"Current before: {self.mem_before_current}\n"
+            f"Current after: {self.mem_after_current}\n"
+            f"Peak during run: {self.mem_after_peak}\n"
+        )
 
 
 def benchmark_run(dataset: Dataset, min_support: float) -> SingleBenchmarkResult:
@@ -79,6 +92,7 @@ def benchmark_run(dataset: Dataset, min_support: float) -> SingleBenchmarkResult
     )
 
 
+# TODO ensure assertions are disabled for profiling
 def main():
     parser = ArgumentParser()
     parser.add_argument("-i", "--input", type=Path, required=True)
