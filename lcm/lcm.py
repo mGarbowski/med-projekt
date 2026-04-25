@@ -20,7 +20,7 @@ class LCMAlgorithm:
         self.dataset = dataset
         self.buckets = self._initial_occurrence_delivery(dataset)
 
-    def run(self):
+    def run(self) -> list[Itemset]:
         for transaction in self.dataset.transactions:
             transaction.remove_infrequent_items(self.buckets, self.minimum_support)
 
