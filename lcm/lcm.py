@@ -69,7 +69,7 @@ class LCMAlgorithm:
                 new_frequent_items = []
                 for item_k in frequent_items[idx + 1 :]:
                     support_k = len(self.buckets[item_k])
-                    if support_k > self.minimum_support:
+                    if support_k >= self.minimum_support:
                         new_frequent_items.append(item_k)
 
                 self.backtracking_lcm(
