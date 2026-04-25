@@ -9,7 +9,10 @@ class Transaction:
     original_transaction: Self
 
     def __init__(
-        self, items: list[int], offset: int = 0, original_transaction: Self = None
+        self,
+        items: list[int],
+        offset: int = 0,
+        original_transaction: Self | None = None,
     ):
         self.items = items
         self.offset = offset
@@ -36,9 +39,14 @@ class Transaction:
         except ValueError:
             return None
 
-    def remove_infrequent_items(
-        self, buckets: tuple[list[Self], ...], min_support: int
-    ):
+    def item_position_original_transaction(self, item: int) -> int | None:
+        # TODO binary search
+        try:
+            return self.original_transaction.items.index(item)
+        except ValueError:
+            return None
+
+    def remove_infrequent_items(self, buckets: list[list[Self]], min_support: int):
         new_items = []
         for item in self.items:
             if len(buckets[item]) >= min_support:

@@ -11,7 +11,7 @@ class TestTransaction:
         t4 = Transaction([2, 6])
         t5 = Transaction([2, 3, 6])
 
-        buckets = (
+        buckets = [
             [],
             [t1, t3],
             [t2, t3, t4, t5],
@@ -19,7 +19,7 @@ class TestTransaction:
             [t1],
             [],
             [t3, t4, t5],
-        )
+        ]
 
         t3_copy = deepcopy(t3)
         t3_copy.remove_infrequent_items(buckets, min_support=1)

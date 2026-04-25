@@ -1,3 +1,4 @@
+from lcm.itemset import Itemset
 from lcm.dataset import Dataset
 from lcm.lcm import LCMAlgorithm
 from lcm.transaction import Transaction
@@ -12,7 +13,7 @@ class TestLcm:
         t5 = Transaction([1, 2, 3, 6])
         dataset = Dataset([t1, t2, t3, t4, t5])
 
-        expected_buckets = (
+        expected_buckets = [
             [],
             [t1, t3, t5],
             [t2, t3, t4, t5],
@@ -20,7 +21,7 @@ class TestLcm:
             [t1],
             [],
             [t2, t3, t4, t5],
-        )
+        ]
 
         buckets = LCMAlgorithm._initial_occurrence_delivery(dataset)
 
@@ -56,6 +57,37 @@ class TestLcm:
 
         assert intersected == expected
 
+    def test_is_item_in_all_transactions_except_first(self):
+        t1 = Transaction([1, 2, 4])
+        t2 = Transaction([1, 2, 3])
+        t3 = Transaction([1, 3, 8, 9])
+        t4 = Transaction([1, 2, 3])
+        transactions = [t1, t2, t3, t4]
+        assert LCMAlgorithm.is_item_in_all_transactions_except_first(transactions, 1)
+        assert not LCMAlgorithm.is_item_in_all_transactions_except_first(
+            transactions, 2
+        )
+        assert LCMAlgorithm.is_item_in_all_transactions_except_first(transactions, 3)
+
+    def test_is_item_in_all_transactions_except_first_ignores_offsets(self):
+        """It should perform search in the original transaction so that offsets are ignored."""
+        t1 = Transaction([1, 2, 4])
+        t2 = Transaction([1, 2, 3])
+        t3 = Transaction([1, 3, 8, 9])
+        t4 = Transaction([1, 2, 3])
+        transactions = [
+            Transaction.with_offset(t1, 2),
+            Transaction.with_offset(t2, 2),
+            Transaction.with_offset(t3, 3),
+            Transaction.with_offset(t4, 2),
+        ]
+
+        assert LCMAlgorithm.is_item_in_all_transactions_except_first(transactions, 1)
+        assert not LCMAlgorithm.is_item_in_all_transactions_except_first(
+            transactions, 2
+        )
+        assert LCMAlgorithm.is_item_in_all_transactions_except_first(transactions, 3)
+
     def test_example_dataset(self):
         dataset = Dataset.from_lists(
             [
@@ -67,5 +99,13 @@ class TestLcm:
             ]
         )
         lcm = LCMAlgorithm(0.4, dataset)
-        lcm.run()
-        pass
+        result = lcm.run()
+
+        expected = [
+            Itemset([1, 3], 3),
+            Itemset([1, 2, 3, 5], 2),
+            Itemset([2, 5], 4),
+            Itemset([2, 3, 5], 3),
+            Itemset([3], 4),
+        ]
+        assert result == expected
