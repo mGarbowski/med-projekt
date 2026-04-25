@@ -28,3 +28,22 @@ class TestDataset:
             ]
         )
         assert dataset.transactions == expected_dataset.transactions
+
+    def test_get_max_item_from_transactions(self):
+        transactions = [Transaction([1, 3, 4]), Transaction([2, 3])]
+        assert Dataset._get_max_item_from_transactions(transactions) == 4
+
+    def test_is_initialized_with_max_item(self):
+        transactions = [Transaction([1, 3, 4]), Transaction([2, 3])]
+        dataset = Dataset(transactions)
+        assert dataset.max_item == 4
+
+    def test_get_unique_items_from_transactions(self):
+        transactions = [Transaction([1, 3, 4]), Transaction([2, 3])]
+        unique_items = Dataset._get_unique_items_from_transactions(transactions)
+        assert unique_items == {1, 2, 3, 4}
+
+    def test_is_initialized_with_unique_items(self):
+        transactions = [Transaction([1, 3, 4]), Transaction([2, 3])]
+        dataset = Dataset(transactions)
+        assert dataset.unique_items == {1, 2, 3, 4}
