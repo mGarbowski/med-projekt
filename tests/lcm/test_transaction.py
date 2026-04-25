@@ -40,3 +40,22 @@ class TestTransaction:
         t3_copy = deepcopy(t3)
         t3_copy.remove_infrequent_items(buckets, min_support=5)
         assert t3_copy.items == []
+
+    def test_item_position(self):
+        t = Transaction([1, 4, 6, 8, 9])
+        assert t.item_position(0) is None
+        assert t.item_position(5) is None
+        assert t.item_position(1) == 0
+        assert t.item_position(4) == 1
+        assert t.item_position(6) == 2
+        assert t.item_position(8) == 3
+        assert t.item_position(9) == 4
+
+        t = Transaction([1, 4, 6, 8, 9], offset=2)
+        assert t.item_position(0) is None
+        assert t.item_position(5) is None
+        assert t.item_position(1) is None
+        assert t.item_position(4) is None
+        assert t.item_position(6) == 2
+        assert t.item_position(8) == 3
+        assert t.item_position(9) == 4
