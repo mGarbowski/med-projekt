@@ -19,3 +19,8 @@ test:
 # Profile time and memory usage of the algorithm
 profile *ARGS:
     PYTHONOPTIMIZE=1 uv run -m lcm.profile {{ARGS}}
+
+
+# Compare results with SPMF for selected test datasets
+correctness:
+    uv run -m lcm.correctness

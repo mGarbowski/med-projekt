@@ -4,6 +4,7 @@ from .transaction import Transaction
 from .dataset import Dataset
 
 
+# TODO abstract output
 class LCMAlgorithm:
     """Implementation of Linear time Closed itemset Miner algorithm.
 
