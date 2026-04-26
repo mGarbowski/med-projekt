@@ -1,5 +1,6 @@
 import os
 import sys
+import tempfile
 import tracemalloc
 from argparse import ArgumentParser
 from dataclasses import dataclass
@@ -7,6 +8,7 @@ from pathlib import Path
 from statistics import mean, stdev
 from time import perf_counter_ns
 
+from .output import LCMOutputToFile
 from .dataset import Dataset
 from .lcm import LCMAlgorithm
 
@@ -66,8 +68,13 @@ def benchmark_run(dataset_file: Path, min_support: float) -> SingleBenchmarkResu
 
     with open(dataset_file) as input_file:
         dataset = Dataset.from_stream(input_file)
-    lcm = LCMAlgorithm(relative_minimum_support=min_support, dataset=dataset)
-    _ = lcm.run()
+
+    with tempfile.NamedTemporaryFile(delete_on_close=True) as output_file:
+        output = LCMOutputToFile(Path(output_file.name))
+        lcm = LCMAlgorithm(
+            relative_minimum_support=min_support, dataset=dataset, output=output
+        )
+        lcm.run()
 
     after_current, after_peak = tracemalloc.get_traced_memory()
     time_end = perf_counter_ns()

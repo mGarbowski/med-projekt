@@ -7,6 +7,7 @@ from pprint import pprint
 
 from lcm.dataset import Dataset
 from lcm.lcm import LCMAlgorithm
+from lcm.output import LCMOutputToFile
 
 
 def compute_spmf(input_file: Path, output_file: Path, min_support: float):
@@ -19,10 +20,11 @@ def compute_spmf(input_file: Path, output_file: Path, min_support: float):
 def compute_this(input_file: Path, output_file: Path, min_support: float):
     with open(input_file) as f:
         dataset = Dataset.from_stream(f)
-    lcm = LCMAlgorithm(relative_minimum_support=min_support, dataset=dataset)
-    itemsets = lcm.run()
-    with open(output_file, "wt") as f:
-        f.writelines(f"{itemset.to_spmf_line()}\n" for itemset in itemsets)
+    output = LCMOutputToFile(output_file)
+    lcm = LCMAlgorithm(
+        relative_minimum_support=min_support, dataset=dataset, output=output
+    )
+    lcm.run()
 
 
 def do_results_match(spmf_file: Path, my_file: Path) -> bool:
@@ -38,7 +40,7 @@ def is_same_result(input_file: Path, min_support: float):
             return do_results_match(spmf_path, my_path)
 
 
-if __name__ == "__main__":
+def main():
     files = [
         Path("data/test_files/contextPasquier99.txt"),
         Path("data/test_files/contextCFPGrowth.txt"),
@@ -57,3 +59,7 @@ if __name__ == "__main__":
 
     print("No match for")
     pprint(errors)
+
+
+if __name__ == "__main__":
+    main()

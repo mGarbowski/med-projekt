@@ -1,3 +1,4 @@
+from .output import LCMOutput
 from .itemset import Itemset
 from .utils import contains_after
 from .transaction import Transaction
@@ -11,17 +12,19 @@ class LCMAlgorithm:
     For finding frequent, closed itemsets in a transaction database.
     """
 
-    def __init__(self, relative_minimum_support: float, dataset: Dataset):
+    def __init__(
+        self, relative_minimum_support: float, dataset: Dataset, output: LCMOutput
+    ):
         if not (0 <= relative_minimum_support <= 1):
             raise ValueError("Relative minimum support value must be between 0 and 1")
 
-        self.discovered_itemsets = []  # TODO use Itemsets class
+        self.output = output
         self.frequent_count = 0
         self.minimum_support = int(relative_minimum_support * len(dataset.transactions))
         self.dataset = dataset
         self.buckets = self._initial_occurrence_delivery(dataset)
 
-    def run(self) -> list[Itemset]:
+    def run(self):
         for transaction in self.dataset.transactions:
             transaction.remove_infrequent_items(self.buckets, self.minimum_support)
 
@@ -33,7 +36,6 @@ class LCMAlgorithm:
             ]
         )
         self.backtracking_lcm([], self.dataset.transactions, all_frequent_items, -1)
-        return self.discovered_itemsets
 
     def backtracking_lcm(
         self,
@@ -59,7 +61,7 @@ class LCMAlgorithm:
                     if self.is_item_in_all_transactions(transactions_of_union, item_k):
                         itemset.append(item_k)
 
-                self.discovered_itemsets.append(
+                self.output.save(
                     Itemset(items=itemset, support=len(transactions_of_union))
                 )
 

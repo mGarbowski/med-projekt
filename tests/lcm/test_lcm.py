@@ -2,6 +2,7 @@ from lcm.itemset import Itemset
 from lcm.dataset import Dataset
 from lcm.lcm import LCMAlgorithm
 from lcm.transaction import Transaction
+from lcm.output import LCMOutputInMemory
 
 
 class TestLcm:
@@ -98,8 +99,10 @@ class TestLcm:
                 [1, 2, 3, 5],
             ]
         )
-        lcm = LCMAlgorithm(0.4, dataset)
-        result = lcm.run()
+        output = LCMOutputInMemory()
+        lcm = LCMAlgorithm(0.4, dataset, output)
+        lcm.run()
+        result = output.itemsets
 
         expected = [
             Itemset([1, 3], 3),

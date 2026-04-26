@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
+from .output import LCMOutputToFile
 from .dataset import Dataset
 from .lcm import LCMAlgorithm
 
@@ -18,13 +19,11 @@ def main():
     with open(args.input) as input_file:
         dataset = Dataset.from_stream(input_file)
 
-    lcm = LCMAlgorithm(relative_minimum_support=args.minsup, dataset=dataset)
-    closed_frequent_itemsets = lcm.run()
-
-    with open(args.output, "wt") as output_file:
-        output_file.writelines(
-            f"{itemset.to_spmf_line()}\n" for itemset in closed_frequent_itemsets
-        )
+    output = LCMOutputToFile(args.output)
+    lcm = LCMAlgorithm(
+        relative_minimum_support=args.minsup, dataset=dataset, output=output
+    )
+    lcm.run()
 
 
 if __name__ == "__main__":
