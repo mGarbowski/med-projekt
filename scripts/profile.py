@@ -8,9 +8,9 @@ from pathlib import Path
 from statistics import mean, stdev
 from time import perf_counter_ns
 
-from .output import LCMOutputToFile
-from .dataset import Dataset
-from .lcm import LCMAlgorithm
+from lcm.output import LCMOutputToFile
+from lcm.dataset import Dataset
+from lcm.lcm import LCMAlgorithm
 
 
 @dataclass(frozen=True)
