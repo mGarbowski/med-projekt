@@ -1,3 +1,5 @@
+import math
+
 from .output import LCMOutput
 from .itemset import Itemset
 from .utils import contains_after
@@ -20,7 +22,9 @@ class LCMAlgorithm:
 
         self.output = output
         self.frequent_count = 0
-        self.minimum_support = int(relative_minimum_support * len(dataset.transactions))
+        self.minimum_support = self._convert_relative_support_to_absolute(
+            relative_minimum_support, dataset
+        )
         self.dataset = dataset
         self.buckets = self._initial_occurrence_delivery(dataset)
 
@@ -156,3 +160,13 @@ class LCMAlgorithm:
                 buckets[item].append(transaction)
 
         return buckets
+
+    @staticmethod
+    def _convert_relative_support_to_absolute(
+        relative_support: float, dataset: Dataset
+    ) -> int:
+        """Converting percentage to number of items.
+
+        Rounding logic consistent with SPMF.
+        """
+        return math.ceil(relative_support * len(dataset.transactions))

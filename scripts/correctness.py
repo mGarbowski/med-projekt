@@ -1,9 +1,8 @@
 """Script for comparing results of SPMF and this implementation of LCM algorithm"""
 
-import os
+import subprocess
 import tempfile
 from pathlib import Path
-from pprint import pprint
 
 from lcm.dataset import Dataset
 from lcm.lcm import LCMAlgorithm
@@ -12,8 +11,18 @@ from lcm.output import LCMOutputToFile
 
 def compute_spmf(input_file: Path, output_file: Path, min_support: float):
     support_text = f"{min_support * 100}%"
-    os.system(
-        f"java -jar extern/spmf.jar run LCM {input_file} {output_file} {support_text}"
+    subprocess.run(
+        [
+            "java",
+            "-jar",
+            "extern/spmf.jar",
+            "run",
+            "LCM",
+            input_file,
+            output_file,
+            support_text,
+        ],
+        capture_output=True,
     )
 
 
@@ -48,17 +57,18 @@ def main():
         Path("data/test_files/contextInverse.txt"),
     ]
     min_support_values = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-    errors = []
+
+    print(
+        f"Comparing results for files: {[str(f) for f in files]}\nand minimum support values: {min_support_values}\n..."
+    )
+
     for file in files:
         for min_support in min_support_values:
-            try:
-                if not is_same_result(file, min_support):
-                    errors.append((file, min_support))
-            except Exception:
-                errors.append((file, min_support))
+            assert is_same_result(file, min_support), (
+                f"Results do not match for {file} with min support {min_support}"
+            )
 
-    print("No match for")
-    pprint(errors)
+    print("All results match")
 
 
 if __name__ == "__main__":

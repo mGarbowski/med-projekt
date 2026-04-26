@@ -1,3 +1,5 @@
+import pytest
+
 from lcm.itemset import Itemset
 from lcm.dataset import Dataset
 from lcm.lcm import LCMAlgorithm
@@ -88,6 +90,34 @@ class TestLcm:
             transactions, 2
         )
         assert LCMAlgorithm.is_item_in_all_transactions_except_first(transactions, 3)
+
+    def _dataset_with_items(self, n_items: int) -> Dataset:
+        return Dataset.from_lists([[1, 2, 3] for _ in range(n_items)])
+
+    @pytest.mark.parametrize(
+        ("relative_support", "dataset_size", "expected_absolute"),
+        [
+            (0.40, 5, 2),
+            (0.41, 5, 3),
+            (0.5, 5, 3),
+            (0.6, 5, 3),
+            (0.61, 5, 4),
+        ],
+    )
+    def test_relative_to_absolute_support(
+        self,
+        relative_support: float,
+        dataset_size: int,
+        expected_absolute: int,
+    ):
+        """Ensure rounding is consistent with SPMF implementation."""
+        assert (
+            LCMAlgorithm._convert_relative_support_to_absolute(
+                relative_support,
+                self._dataset_with_items(dataset_size),
+            )
+            == expected_absolute
+        )
 
     def test_example_dataset(self):
         dataset = Dataset.from_lists(

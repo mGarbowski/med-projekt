@@ -23,6 +23,7 @@ class LCMOutputInMemory(LCMOutput):
 class LCMOutputToFile(LCMOutput):
     def __init__(self, output_file: Path):
         self.output_file = output_file
+        self.output_file.write_text("")
 
     @override
     def save(self, itemset: Itemset):
