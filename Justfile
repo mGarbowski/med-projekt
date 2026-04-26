@@ -20,10 +20,6 @@ test:
 profile *ARGS:
     PYTHONOPTIMIZE=1 uv run -m scripts.profile {{ARGS}}
 
-# Compare results with SPMF for selected test datasets
-correctness:
-    uv run -m scripts.correctness
-
 # Run the CLI
 run *ARGS:
     uv run -m scripts.cli {{ARGS}}
