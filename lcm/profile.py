@@ -1,3 +1,5 @@
+import os
+import sys
 import tracemalloc
 from argparse import ArgumentParser
 from dataclasses import dataclass
@@ -12,10 +14,8 @@ from .lcm import LCMAlgorithm
 @dataclass(frozen=True)
 class SingleBenchmarkResult:
     time_ns: int
-    mem_before_current: int
-    mem_before_peak: int
-    mem_after_current: int
     mem_after_peak: int
+    mem_delta_current: int
 
 
 @dataclass(frozen=True)
@@ -39,23 +39,15 @@ class AggregatedValue:
 @dataclass(frozen=True)
 class BenchmarkResult:
     time: AggregatedValue
-    mem_before_current: AggregatedValue
-    mem_before_peak: AggregatedValue
-    mem_after_current: AggregatedValue
     mem_after_peak: AggregatedValue
+    mem_delta_current: AggregatedValue
 
     @classmethod
     def aggregate(cls, results: list[SingleBenchmarkResult]):
         return cls(
-            time=AggregatedValue.from_values([r.time_ns / 1000 for r in results], "ms"),
-            mem_before_current=AggregatedValue.from_values(
-                [r.mem_before_current / 1024 for r in results], "KiB"
-            ),
-            mem_before_peak=AggregatedValue.from_values(
-                [r.mem_before_peak / 1024 for r in results], "KiB"
-            ),
-            mem_after_current=AggregatedValue.from_values(
-                [r.mem_after_current / 1024 for r in results], "KiB"
+            time=AggregatedValue.from_values([r.time_ns / 1000 for r in results], "us"),
+            mem_delta_current=AggregatedValue.from_values(
+                [r.mem_delta_current / 1024 for r in results], "KiB"
             ),
             mem_after_peak=AggregatedValue.from_values(
                 [r.mem_after_peak / 1024 for r in results], "KiB"
@@ -63,19 +55,17 @@ class BenchmarkResult:
         )
 
     def summary(self):
-        return (
-            f"Time: {self.time}\n"
-            f"Current before: {self.mem_before_current}\n"
-            f"Current after: {self.mem_after_current}\n"
-            f"Peak during run: {self.mem_after_peak}\n"
-        )
+        return f"Time: {self.time}\nPeak memory use: {self.mem_after_peak}\n"
 
 
-def benchmark_run(dataset: Dataset, min_support: float) -> SingleBenchmarkResult:
+def benchmark_run(dataset_file: Path, min_support: float) -> SingleBenchmarkResult:
     tracemalloc.start()
+    tracemalloc.reset_peak()
     time_start = perf_counter_ns()
     before_current, before_peak = tracemalloc.get_traced_memory()
 
+    with open(dataset_file) as input_file:
+        dataset = Dataset.from_stream(input_file)
     lcm = LCMAlgorithm(relative_minimum_support=min_support, dataset=dataset)
     _ = lcm.run()
 
@@ -85,14 +75,11 @@ def benchmark_run(dataset: Dataset, min_support: float) -> SingleBenchmarkResult
 
     return SingleBenchmarkResult(
         time_ns=time_end - time_start,
-        mem_before_current=before_current,
-        mem_before_peak=before_peak,
-        mem_after_current=after_current,
         mem_after_peak=after_peak,
+        mem_delta_current=after_current - before_current,
     )
 
 
-# TODO ensure assertions are disabled for profiling
 def main():
     parser = ArgumentParser()
     parser.add_argument("-i", "--input", type=Path, required=True)
@@ -103,12 +90,15 @@ def main():
     if not (0 <= args.minsup <= 1):
         raise ValueError("Minimum support must be between 0 and 1")
 
-    with open(args.input) as input_file:
-        dataset = Dataset.from_stream(input_file)
+    if os.environ.get("PYTHONOPTIMIZE", "") != "1":
+        print(
+            "WARNING: PYTHONOPTIMIZE environment variable is not set, expensive assertions will run during profiling",
+            file=sys.stderr,
+        )
 
-    results = [benchmark_run(dataset, args.minsup) for _ in range(args.num_samples)]
-    aggregaet_results = BenchmarkResult.aggregate(results)
-    print(aggregaet_results.summary())
+    results = [benchmark_run(args.input, args.minsup) for _ in range(args.num_samples)]
+    aggregate_results = BenchmarkResult.aggregate(results)
+    print(aggregate_results.summary())
 
 
 if __name__ == "__main__":

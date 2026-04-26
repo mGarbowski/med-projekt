@@ -15,3 +15,7 @@ check:
 # Run tests
 test:
     uvx pytest
+
+# Profile time and memory usage of the algorithm
+profile *ARGS:
+    PYTHONOPTIMIZE=1 uv run -m lcm.profile {{ARGS}}
