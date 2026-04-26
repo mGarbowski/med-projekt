@@ -43,6 +43,11 @@ Termin do 16 czerwca. Bardzo zachęcam do przedstawienia wcześniej (nawet kilka
 * Testy
     * testy jednostkowe implementacji algorytmu
     * testy porównujące wyniki naszej implementacji z wynikami implementacji SPMF (poprawność)
+* Asercje a wydajność
+    * w implementacji algorytmu są robione drogie asercje (np. sprawdzenie, czy elementy transakcji są posortowane)
+    * to ma pomóc w testowaniu i debugowaniu
+    * asercje można całkiem wyłączyć ustawiając zmienną środowiskową `PYTHONOPTIMIZE=1`
+    * (to już jest załatwione jak się uruchamia `just profile`)
 
 ## TODO
 
