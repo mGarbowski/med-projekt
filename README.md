@@ -1,4 +1,4 @@
-# med-projekt
+# Metody eksploracji danych w odkrywaniu wiedzy - projekt
 
 * Mikołaj Garbowski
 * Marcin Bagnowski
