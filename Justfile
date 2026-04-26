@@ -2,6 +2,19 @@
 @default:
     just -l
 
+# Install dependencies
+install: _check-java
+    uv sync
+
+# Check if Java is installed (required for SPMF tests)
+_check-java:
+    #!/bin/bash
+    if ! command -v java &> /dev/null; then
+        echo "Error: Java is not installed"
+        exit 1
+    fi
+    java -version
+
 # Code formatter
 fmt:
     uvx ruff format
