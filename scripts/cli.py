@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
-from lcm.output import LCMOutputToFile
+from base.output import LCMOutputToFile
 from lcm.dataset import Dataset
 from lcm.lcm import LCMAlgorithm
 

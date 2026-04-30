@@ -8,7 +8,7 @@ import pytest
 
 from lcm.dataset import Dataset
 from lcm.lcm import LCMAlgorithm
-from lcm.output import LCMOutputToFile
+from base.output import LCMOutputToFile
 
 
 @pytest.fixture(scope="module")

@@ -2,21 +2,21 @@ import math
 
 from base.abstract_lcm import AbstractLCM
 from base.output import LCMOutput
-from .itemset import Itemset
+from .itemset import ItemsetOpt
 from .utils import contains_after
-from .transaction import Transaction
-from .dataset import Dataset
+from .transaction import TransactionOpt
+from .dataset import DatasetOpt
 
 
 # TODO abstract output
-class LCMAlgorithm(AbstractLCM):
-    """Implementation of Linear time Closed itemset Miner algorithm.
+class LCMAlgorithmOpt(AbstractLCM):
+    """Optimized implementation of Linear time Closed itemset Miner algorithm.
 
     For finding frequent, closed itemsets in a transaction database.
     """
 
     def __init__(
-        self, relative_minimum_support: float, dataset: Dataset, output: LCMOutput
+        self, relative_minimum_support: float, dataset: DatasetOpt, output: LCMOutput
     ):
         if not (0 <= relative_minimum_support <= 1):
             raise ValueError("Relative minimum support value must be between 0 and 1")
@@ -45,7 +45,7 @@ class LCMAlgorithm(AbstractLCM):
     def backtracking_lcm(
         self,
         prefix: list[int],
-        transactions_with_prefix: list[Transaction],
+        transactions_with_prefix: list[TransactionOpt],
         frequent_items: list[int],
         prefix_tail_idx: int,
     ):
@@ -67,7 +67,7 @@ class LCMAlgorithm(AbstractLCM):
                         itemset.append(item_k)
 
                 self.output.save(
-                    Itemset(items=itemset, support=len(transactions_of_union))
+                    ItemsetOpt(items=itemset, support=len(transactions_of_union))
                 )
 
                 self.anytime_database_reduction(
@@ -86,7 +86,7 @@ class LCMAlgorithm(AbstractLCM):
 
     def anytime_database_reduction(
         self,
-        transactions_of_union: list[Transaction],
+        transactions_of_union: list[TransactionOpt],
         idx_in_frequent_items: int,
         frequent_items: list[int],
         item_e: int,
@@ -101,8 +101,8 @@ class LCMAlgorithm(AbstractLCM):
 
     @staticmethod
     def intersect_transactions(
-        transactions: list[Transaction], item: int
-    ) -> list[Transaction]:
+        transactions: list[TransactionOpt], item: int
+    ) -> list[TransactionOpt]:
         """Get transactions containing the union of items
         transactions is a list of transactions of itemset P
         this calculates the transaction list for itemset union(P, {item})
@@ -113,14 +113,14 @@ class LCMAlgorithm(AbstractLCM):
             item_position = transaction.item_position(item)  # search after offset
             if item_position is not None:
                 transactions_of_union.append(
-                    Transaction.with_offset(transaction, item_position)
+                    TransactionOpt.with_offset(transaction, item_position)
                 )
 
         return transactions_of_union
 
     @staticmethod
     def is_ppc_extension(
-        prefix: list[int], transactions_of_union: list[Transaction], e: int
+        prefix: list[int], transactions_of_union: list[TransactionOpt], e: int
     ) -> bool:
         """Check if union(prefix, {e}) is a prefix-preserving closure extension"""
         first_t = transactions_of_union[0]
@@ -128,7 +128,7 @@ class LCMAlgorithm(AbstractLCM):
             if (
                 item < e
                 and (len(prefix) == 0 or item not in prefix)  # TODO binary search
-                and LCMAlgorithm.is_item_in_all_transactions_except_first(
+                and LCMAlgorithmOpt.is_item_in_all_transactions_except_first(
                     transactions_of_union, item
                 )
             ):
@@ -137,7 +137,7 @@ class LCMAlgorithm(AbstractLCM):
 
     @staticmethod
     def is_item_in_all_transactions_except_first(
-        transactions: list[Transaction], item: int
+        transactions: list[TransactionOpt], item: int
     ):
         for transaction in transactions[1:]:
             if transaction.item_position_original_transaction(item) is None:
@@ -146,14 +146,16 @@ class LCMAlgorithm(AbstractLCM):
         return True
 
     @staticmethod
-    def is_item_in_all_transactions(transactions: list[Transaction], item: int) -> bool:
+    def is_item_in_all_transactions(
+        transactions: list[TransactionOpt], item: int
+    ) -> bool:
         # TODO binary search
         return all(item in transaction.items for transaction in transactions)
 
     @staticmethod
     def _initial_occurrence_delivery(
-        dataset: Dataset,
-    ) -> list[list[Transaction]]:
+        dataset: DatasetOpt,
+    ) -> list[list[TransactionOpt]]:
         buckets = [[] for _ in range(dataset.max_item + 1)]
 
         for transaction in dataset.transactions:
@@ -164,7 +166,7 @@ class LCMAlgorithm(AbstractLCM):
 
     @staticmethod
     def _convert_relative_support_to_absolute(
-        relative_support: float, dataset: Dataset
+        relative_support: float, dataset: DatasetOpt
     ) -> int:
         """Converting percentage to number of items.
 

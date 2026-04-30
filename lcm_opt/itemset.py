@@ -5,7 +5,7 @@ from base.abstract_itemset import AbstractItemset
 
 
 @dataclass
-class Itemset(AbstractItemset):
+class ItemsetOpt(AbstractItemset):
     items: list[int]
     support: int
 

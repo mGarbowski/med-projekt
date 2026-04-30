@@ -4,7 +4,7 @@ from lcm.itemset import Itemset
 from lcm.dataset import Dataset
 from lcm.lcm import LCMAlgorithm
 from lcm.transaction import Transaction
-from lcm.output import LCMOutputInMemory
+from base.output import LCMOutputInMemory
 
 
 class TestLcm:

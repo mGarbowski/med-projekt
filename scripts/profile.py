@@ -8,9 +8,8 @@ from pathlib import Path
 from statistics import mean, stdev
 from time import perf_counter_ns
 
-from lcm.output import LCMOutputToFile
 from lcm.dataset import Dataset
-from lcm.lcm import LCMAlgorithm
+from base.factory import AlgorithmFactory
 
 
 @dataclass(frozen=True)
@@ -60,7 +59,9 @@ class BenchmarkResult:
         return f"Time: {self.time}\nPeak memory use: {self.mem_after_peak}\n"
 
 
-def benchmark_run(dataset_file: Path, min_support: float) -> SingleBenchmarkResult:
+def benchmark_run(
+    dataset_file: Path, min_support: float, algorithm_type: str, spmf_jar: Path
+) -> SingleBenchmarkResult:
     tracemalloc.start()
     tracemalloc.reset_peak()
     time_start = perf_counter_ns()
@@ -70,11 +71,16 @@ def benchmark_run(dataset_file: Path, min_support: float) -> SingleBenchmarkResu
         dataset = Dataset.from_stream(input_file)
 
     with tempfile.NamedTemporaryFile(delete_on_close=True) as output_file:
-        output = LCMOutputToFile(Path(output_file.name))
-        lcm = LCMAlgorithm(
-            relative_minimum_support=min_support, dataset=dataset, output=output
+        output_path = Path(output_file.name)
+
+        algorithm = AlgorithmFactory.create(
+            algorithm_type=algorithm_type,
+            input_file=dataset_file,
+            output_file=output_path,
+            min_support=min_support,
+            spmf_jar=spmf_jar,
         )
-        lcm.run()
+        algorithm.run()
 
     after_current, after_peak = tracemalloc.get_traced_memory()
     time_end = perf_counter_ns()
@@ -92,6 +98,20 @@ def main():
     parser.add_argument("-i", "--input", type=Path, required=True)
     parser.add_argument("-s", "--minsup", type=float, required=True)
     parser.add_argument("-n", "--num_samples", type=int, default=100)
+    parser.add_argument(
+        "-a",
+        "--algorithm",
+        type=str,
+        choices=["custom", "optimized", "spmf"],
+        default="custom",
+        help="Algorithm implementation to use (default: 'custom')",
+    )
+    parser.add_argument(
+        "--spmf-jar",
+        type=Path,
+        default=Path("extern/spmf.jar"),
+        help="Path to the spmf.jar file (only used for 'spmf' algorithm)",
+    )
 
     args = parser.parse_args()
     if not (0 <= args.minsup <= 1):
@@ -103,7 +123,18 @@ def main():
             file=sys.stderr,
         )
 
-    results = [benchmark_run(args.input, args.minsup) for _ in range(args.num_samples)]
+    if args.algorithm == "spmf":
+        print(
+            "WARNING: You are using the Java implementation. tracemalloc will only measure memory used by the Python script! "
+            "Memory allocated by the Java Virtual Machine (JVM) will not be tracked.",
+            file=sys.stderr,
+        )
+
+    results = [
+        benchmark_run(args.input, args.minsup, args.algorithm, args.spmf_jar)
+        for _ in range(args.num_samples)
+    ]
+
     aggregate_results = BenchmarkResult.aggregate(results)
     print(aggregate_results.summary())
 
