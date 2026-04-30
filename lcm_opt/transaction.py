@@ -31,6 +31,8 @@ class TransactionOpt:
             "Offset must be a valid index in the items list"
         )
 
+    __slots__ = ('items', 'offset', 'weight', 'interior_intersection')
+
     @classmethod
     def with_offset(cls, transaction: Self, offset: int) -> Self:
         return cls(

@@ -9,6 +9,8 @@ class ItemsetOpt(AbstractItemset):
     items: list[int]
     support: int
 
+    __slots__ = ('items', 'support')
+
     # def __post_init__(self):
     #     assert is_sorted(self.items), "Items must be in ascending order"
 
