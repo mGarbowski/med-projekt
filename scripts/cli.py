@@ -1,9 +1,11 @@
+import sys
 from argparse import ArgumentParser
 from pathlib import Path
 
 from base.output import LCMOutputToFile
 from lcm.dataset import Dataset
 from lcm.lcm import LCMAlgorithm
+from base.factory import AlgorithmFactory
 
 
 def main():
@@ -11,19 +13,41 @@ def main():
     parser.add_argument("-i", "--input", type=Path, required=True)
     parser.add_argument("-o", "--output", type=Path, required=True)
     parser.add_argument("-s", "--minsup", type=float, required=True)
+    parser.add_argument(
+        "-a",
+        "--algorithm",
+        type=str,
+        choices=["custom", "optimized", "spmf"],
+        default="custom",
+        help="Algorithm implementation to use (default: 'custom')",
+    )
+    parser.add_argument(
+        "--spmf-jar",
+        type=Path,
+        default=Path("extern/spmf.jar"),
+        help="Path to the spmf.jar file (only used for 'spmf' algorithm)",
+    )
 
     args = parser.parse_args()
     if not (0 <= args.minsup <= 1):
         raise ValueError("Minimum support must be between 0 and 1")
+    
+    if args.algorithm == "spmf":
+        print(
+            "WARNING: You are using the Java implementation. tracemalloc will only measure memory used by the Python script! "
+            "Memory allocated by the Java Virtual Machine (JVM) will not be tracked.",
+            file=sys.stderr,
+        )
 
-    with open(args.input) as input_file:
-        dataset = Dataset.from_stream(input_file)
-
-    output = LCMOutputToFile(args.output)
-    lcm = LCMAlgorithm(
-        relative_minimum_support=args.minsup, dataset=dataset, output=output
+    algorithm = AlgorithmFactory.create(
+            algorithm_type=args.algorithm,
+            input_file=args.input,
+            output_file=args.output,
+            min_support=args.minsup,
+            spmf_jar=args.spmf_jar,
     )
-    lcm.run()
+    
+    algorithm.run()
 
 
 if __name__ == "__main__":
