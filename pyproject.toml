@@ -1,0 +1,18 @@
+[project]
+name = "med-projekt"
+version = "0.1.0"
+description = "Implementation of Linear time Closed itemset Miner algorithm"
+authors = [
+    { name = "Mikołaj Garbowski", email = "mikolaj.garbowski@gmail.com" },
+    { name = "Marcin Bagnowski" }
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "ruff>=0.15.12",
+    "ty>=0.0.32",
+]
