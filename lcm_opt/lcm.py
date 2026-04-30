@@ -66,8 +66,9 @@ class LCMAlgorithmOpt(AbstractLCM):
                     if self.is_item_in_all_transactions(transactions_of_union, item_k):
                         itemset.append(item_k)
 
+                support = sum(t.weight for t in transactions_of_union)
                 self.output.save(
-                    ItemsetOpt(items=itemset, support=len(transactions_of_union))
+                    ItemsetOpt(items=itemset, support=support)
                 )
 
                 self.anytime_database_reduction(
@@ -76,7 +77,7 @@ class LCMAlgorithmOpt(AbstractLCM):
 
                 new_frequent_items = []
                 for item_k in frequent_items[idx + 1 :]:
-                    support_k = len(self.buckets[item_k])
+                    support_k = sum(t.weight for t in self.buckets[item_k])
                     if support_k >= self.minimum_support:
                         new_frequent_items.append(item_k)
 
@@ -116,7 +117,7 @@ class LCMAlgorithmOpt(AbstractLCM):
                     TransactionOpt.with_offset(transaction, item_position)
                 )
 
-        return transactions_of_union
+        return LCMAlgorithmOpt.merge_transactions(transactions_of_union)
 
     @staticmethod
     def is_ppc_extension(
@@ -124,7 +125,7 @@ class LCMAlgorithmOpt(AbstractLCM):
     ) -> bool:
         """Check if union(prefix, {e}) is a prefix-preserving closure extension"""
         first_t = transactions_of_union[0]
-        for item in first_t.items[: first_t.offset]:
+        for item in first_t.interior_intersection:
             if (
                 item < e
                 and (len(prefix) == 0 or item not in prefix)  # TODO binary search
@@ -140,9 +141,8 @@ class LCMAlgorithmOpt(AbstractLCM):
         transactions: list[TransactionOpt], item: int
     ):
         for transaction in transactions[1:]:
-            if transaction.item_position_original_transaction(item) is None:
+            if item not in transaction.interior_intersection:
                 return False
-
         return True
 
     @staticmethod
@@ -150,7 +150,25 @@ class LCMAlgorithmOpt(AbstractLCM):
         transactions: list[TransactionOpt], item: int
     ) -> bool:
         # TODO binary search
-        return all(item in transaction.items for transaction in transactions)
+        return all(item in transaction.interior_intersection for transaction in transactions)
+    
+    @staticmethod
+    def merge_transactions(transactions: list[TransactionOpt]) -> list[TransactionOpt]:
+        """Merges identical transactions"""
+        merged_dict: dict[tuple[int, ...], TransactionOpt] = {}
+
+        for t in transactions:
+            key = t.get_active_items_tuple()
+
+            if key not in merged_dict:
+                merged_dict[key] = t
+            else:
+                # merge duplicate transactions
+                existing_t = merged_dict[key]
+                existing_t.weight += t.weight
+                existing_t.interior_intersection.intersection_update(t.interior_intersection)
+
+        return list(merged_dict.values()) # list of unique transactions after merge
 
     @staticmethod
     def _initial_occurrence_delivery(
