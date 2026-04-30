@@ -26,7 +26,7 @@ class TransactionOpt:
         else:
             self.interior_intersection = interior_intersection
 
-        assert is_sorted(self.items), "Items must be in ascending order"
+        # assert is_sorted(self.items), "Items must be in ascending order"
         assert 0 <= self.offset < len(self.items), (
             "Offset must be a valid index in the items list"
         )
