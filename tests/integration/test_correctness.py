@@ -8,6 +8,9 @@ import pytest
 
 from lcm.dataset import Dataset
 from lcm.lcm import LCMAlgorithm
+from lcm_opt.dataset import DatasetOpt
+from lcm_opt.lcm import LCMAlgorithmOpt
+from extern.lcm_original import LCMOriginal
 from base.output import LCMOutputToFile
 
 
@@ -25,33 +28,22 @@ def temp_files():
     """Provide temporary files for SPMF and LCM output."""
     with tempfile.NamedTemporaryFile(delete=False) as spmf_file:
         with tempfile.NamedTemporaryFile(delete=False) as my_file:
-            spmf_path = Path(spmf_file.name)
-            my_path = Path(my_file.name)
-            yield spmf_path, my_path
-            # Cleanup
-            spmf_path.unlink(missing_ok=True)
-            my_path.unlink(missing_ok=True)
+            with tempfile.NamedTemporaryFile(delete=False) as my_file2:
+                spmf_path = Path(spmf_file.name)
+                my_path = Path(my_file.name)
+                my_path2 = Path(my_file2.name)
+                yield spmf_path, my_path, my_path2
+                # Cleanup
+                spmf_path.unlink(missing_ok=True)
+                my_path.unlink(missing_ok=True)
+                my_path2.unlink(missing_ok=True)
 
 
 def _compute_spmf(
     spmf_jar: Path, input_file: Path, output_file: Path, min_support: float
 ) -> None:
     """Compute closed frequent itemsets using SPMF."""
-    support_text = f"{min_support * 100}%"
-    subprocess.run(
-        [
-            "java",
-            "-jar",
-            str(spmf_jar),
-            "run",
-            "LCM",
-            str(input_file),
-            str(output_file),
-            support_text,
-        ],
-        capture_output=True,
-        check=True,
-    )
+    LCMOriginal(spmf_jar, input_file, output_file, min_support).run()
 
 
 def _compute_this(input_file: Path, output_file: Path, min_support: float) -> None:
@@ -60,6 +52,17 @@ def _compute_this(input_file: Path, output_file: Path, min_support: float) -> No
         dataset = Dataset.from_stream(f)
     output = LCMOutputToFile(output_file)
     lcm = LCMAlgorithm(
+        relative_minimum_support=min_support, dataset=dataset, output=output
+    )
+    lcm.run()
+
+
+def _compute_this_opt(input_file: Path, output_file: Path, min_support: float) -> None:
+    """Compute closed frequent itemsets using our optimized LCM implementation."""
+    with open(input_file) as f:
+        dataset = DatasetOpt.from_stream(f)
+    output = LCMOutputToFile(output_file)
+    lcm = LCMAlgorithmOpt(
         relative_minimum_support=min_support, dataset=dataset, output=output
     )
     lcm.run()
@@ -90,7 +93,7 @@ def _compute_this(input_file: Path, output_file: Path, min_support: float) -> No
 )
 def test_lcm_correctness_against_spmf(
     spmf_jar_path: Path,
-    temp_files: tuple[Path, Path],
+    temp_files: tuple[Path, Path, Path],
     input_file: Path,
     min_support: float,
 ) -> None:
@@ -98,7 +101,7 @@ def test_lcm_correctness_against_spmf(
     if not input_file.exists():
         pytest.skip(f"Test file not found: {input_file}")
 
-    spmf_out, my_out = temp_files
+    spmf_out, my_out, my_out2 = temp_files
 
     _compute_spmf(spmf_jar_path, input_file, spmf_out, min_support)
     _compute_this(input_file, my_out, min_support)
@@ -107,5 +110,12 @@ def test_lcm_correctness_against_spmf(
     my_result = my_out.read_text()
 
     assert spmf_result == my_result, (
-        f"Results differ for {input_file.name} with min_support={min_support}"
+        f"Results differ for base LCM tested on {input_file.name} with min_support={min_support}"
+    )
+
+    _compute_this_opt(input_file, my_out2, min_support)
+    my_result2 = my_out2.read_text()
+
+    assert spmf_result == my_result2, (
+        f"Results differ for optimized LCM tested on {input_file.name} with min_support={min_support}"
     )
