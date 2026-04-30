@@ -46,7 +46,7 @@ class BenchmarkResult:
     @classmethod
     def aggregate(cls, results: list[SingleBenchmarkResult]):
         return cls(
-            time=AggregatedValue.from_values([r.time_ns / 1000 for r in results], "us"),
+            time=AggregatedValue.from_values([r.time_ns / 1e6 for r in results], "ms"),
             mem_delta_current=AggregatedValue.from_values(
                 [r.mem_delta_current / 1024 for r in results], "KiB"
             ),
@@ -66,9 +66,6 @@ def benchmark_run(
     tracemalloc.reset_peak()
     time_start = perf_counter_ns()
     before_current, before_peak = tracemalloc.get_traced_memory()
-
-    with open(dataset_file) as input_file:
-        dataset = Dataset.from_stream(input_file)
 
     with tempfile.NamedTemporaryFile(delete_on_close=True) as output_file:
         output_path = Path(output_file.name)
