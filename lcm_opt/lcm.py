@@ -1,3 +1,4 @@
+import bisect
 import math
 
 from base.abstract_lcm import AbstractLCM
@@ -124,14 +125,15 @@ class LCMAlgorithmOpt(AbstractLCM):
         """Check if union(prefix, {e}) is a prefix-preserving closure extension"""
         first_t = transactions_of_union[0]
         for item in first_t.interior_intersection:
-            if (
-                item < e
-                and (len(prefix) == 0 or item not in prefix)  # TODO binary search
-                and LCMAlgorithmOpt.is_item_in_all_transactions_except_first(
-                    transactions_of_union, item
-                )
-            ):
-                return False
+            if item < e:
+                idx = bisect.bisect_left(prefix, item)
+                is_in_prefix = (idx != len(prefix) and prefix[idx] == item)
+
+                if not is_in_prefix:
+                    if LCMAlgorithmOpt.is_item_in_all_transactions_except_first(
+                        transactions_of_union, item
+                    ):
+                        return False
         return True
 
     @staticmethod
@@ -147,7 +149,6 @@ class LCMAlgorithmOpt(AbstractLCM):
     def is_item_in_all_transactions(
         transactions: list[TransactionOpt], item: int
     ) -> bool:
-        # TODO binary search
         return all(
             item in transaction.interior_intersection for transaction in transactions
         )

@@ -1,3 +1,6 @@
+import bisect
+
+
 def is_sorted(numbers: list[int]):
     for idx, number in enumerate(numbers[:-1]):
         if number > numbers[idx + 1]:
@@ -7,5 +10,7 @@ def is_sorted(numbers: list[int]):
 
 
 def contains_after(numbers: list[int], element: int, after_idx: int) -> bool:
-    # TODO binary search
-    return element in numbers[after_idx + 1 :]
+    
+    # binary search
+    idx = bisect.bisect_left(numbers, element, lo=after_idx + 1)
+    return idx != len(numbers) and numbers[idx] == element

@@ -1,3 +1,4 @@
+import bisect
 from typing import Self
 
 from .utils import is_sorted
@@ -43,11 +44,12 @@ class TransactionOpt:
         return self.items == other.items and self.offset == other.offset
 
     def item_position(self, item: int) -> int | None:
-        # TODO binary search
-        try:
-            return self.items.index(item, self.offset)
-        except ValueError:
-            return None
+        # binary search
+        idx = bisect.bisect_left(self.items, item, lo=self.offset)
+        if idx != len(self.items) and self.items[idx] == item:
+            return idx
+            
+        return None
 
     def get_active_items_tuple(self) -> tuple[int, ...]:
         """Returns active part of the transaction as tuple (hashable)"""
