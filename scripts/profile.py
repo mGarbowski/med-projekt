@@ -8,8 +8,7 @@ from pathlib import Path
 from statistics import mean, stdev
 from time import perf_counter_ns
 
-from lcm.dataset import Dataset
-from base.factory import AlgorithmFactory
+from base.factory import AlgorithmFactory, AlgorithmVersion
 
 
 @dataclass(frozen=True)
@@ -60,7 +59,7 @@ class BenchmarkResult:
 
 
 def benchmark_run(
-    dataset_file: Path, min_support: float, algorithm_type: str, spmf_jar: Path
+    dataset_file: Path, min_support: float, algorithm_version: str, spmf_jar: Path
 ) -> SingleBenchmarkResult:
     tracemalloc.start()
     tracemalloc.reset_peak()
@@ -71,7 +70,7 @@ def benchmark_run(
         output_path = Path(output_file.name)
 
         algorithm = AlgorithmFactory.create(
-            algorithm_type=algorithm_type,
+            algorithm_version=AlgorithmVersion(algorithm_version),
             input_file=dataset_file,
             output_file=output_path,
             min_support=min_support,
@@ -99,7 +98,7 @@ def main():
         "-a",
         "--algorithm",
         type=str,
-        choices=["custom", "optimized", "spmf"],
+        choices=[e.value for e in AlgorithmVersion],
         default="custom",
         help="Algorithm implementation to use (default: 'custom')",
     )

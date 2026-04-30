@@ -1,13 +1,12 @@
-"""Parametrized integration tests comparing LCM against SPMF reference implementation."""
+"""Parametrized integration tests comparing LCM versions against SPMF reference implementation."""
 
-import subprocess
-import tempfile
 from pathlib import Path
 
 import pytest
 
-from lcm.dataset import Dataset
+from lcm.dataset import Dataset, DatasetIntersec
 from lcm.lcm import LCMAlgorithm
+from lcm.lcm_intersec import LCMAlgorithmIntersec
 from lcm_opt.dataset import DatasetOpt
 from lcm_opt.lcm import LCMAlgorithmOpt
 from extern.lcm_original import LCMOriginal
@@ -23,22 +22,6 @@ def spmf_jar_path() -> Path:
     return jar_path
 
 
-@pytest.fixture
-def temp_files():
-    """Provide temporary files for SPMF and LCM output."""
-    with tempfile.NamedTemporaryFile(delete=False) as spmf_file:
-        with tempfile.NamedTemporaryFile(delete=False) as my_file:
-            with tempfile.NamedTemporaryFile(delete=False) as my_file2:
-                spmf_path = Path(spmf_file.name)
-                my_path = Path(my_file.name)
-                my_path2 = Path(my_file2.name)
-                yield spmf_path, my_path, my_path2
-                # Cleanup
-                spmf_path.unlink(missing_ok=True)
-                my_path.unlink(missing_ok=True)
-                my_path2.unlink(missing_ok=True)
-
-
 def _compute_spmf(
     spmf_jar: Path, input_file: Path, output_file: Path, min_support: float
 ) -> None:
@@ -52,6 +35,19 @@ def _compute_this(input_file: Path, output_file: Path, min_support: float) -> No
         dataset = Dataset.from_stream(f)
     output = LCMOutputToFile(output_file)
     lcm = LCMAlgorithm(
+        relative_minimum_support=min_support, dataset=dataset, output=output
+    )
+    lcm.run()
+
+
+def _compute_this_intersec(
+    input_file: Path, output_file: Path, min_support: float
+) -> None:
+    """Compute closed frequent itemsets using our LCM with transactions intersections implementation."""
+    with open(input_file) as f:
+        dataset = DatasetIntersec.from_stream(f)
+    output = LCMOutputToFile(output_file)
+    lcm = LCMAlgorithmIntersec(
         relative_minimum_support=min_support, dataset=dataset, output=output
     )
     lcm.run()
@@ -93,7 +89,7 @@ def _compute_this_opt(input_file: Path, output_file: Path, min_support: float) -
 )
 def test_lcm_correctness_against_spmf(
     spmf_jar_path: Path,
-    temp_files: tuple[Path, Path, Path],
+    tmp_path: Path,
     input_file: Path,
     min_support: float,
 ) -> None:
@@ -101,21 +97,31 @@ def test_lcm_correctness_against_spmf(
     if not input_file.exists():
         pytest.skip(f"Test file not found: {input_file}")
 
-    spmf_out, my_out, my_out2 = temp_files
+    spmf_out = tmp_path / "spmf.txt"
+    base_out = tmp_path / "base.txt"
+    intersec_out = tmp_path / "intersec.txt"
+    opt_out = tmp_path / "opt.txt"
 
     _compute_spmf(spmf_jar_path, input_file, spmf_out, min_support)
-    _compute_this(input_file, my_out, min_support)
+    _compute_this(input_file, base_out, min_support)
 
     spmf_result = spmf_out.read_text()
-    my_result = my_out.read_text()
+    base_result = base_out.read_text()
 
-    assert spmf_result == my_result, (
+    assert spmf_result == base_result, (
         f"Results differ for base LCM tested on {input_file.name} with min_support={min_support}"
     )
 
-    _compute_this_opt(input_file, my_out2, min_support)
-    my_result2 = my_out2.read_text()
+    _compute_this_intersec(input_file, intersec_out, min_support)
+    intersec_result = intersec_out.read_text()
 
-    assert spmf_result == my_result2, (
+    assert spmf_result == intersec_result, (
+        f"Results differ for LCM with transactions intersections tested on {input_file.name} with min_support={min_support}"
+    )
+
+    _compute_this_opt(input_file, opt_out, min_support)
+    opt_result = opt_out.read_text()
+
+    assert spmf_result == opt_result, (
         f"Results differ for optimized LCM tested on {input_file.name} with min_support={min_support}"
     )

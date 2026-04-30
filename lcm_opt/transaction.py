@@ -32,7 +32,12 @@ class TransactionOpt:
 
     @classmethod
     def with_offset(cls, transaction: Self, offset: int) -> Self:
-        return cls(transaction.items, offset, transaction.weight, interior_intersection=set(transaction.interior_intersection))
+        return cls(
+            transaction.items,
+            offset,
+            transaction.weight,
+            interior_intersection=set(transaction.interior_intersection),
+        )
 
     def __eq__(self, other):
         return self.items == other.items and self.offset == other.offset
@@ -43,10 +48,10 @@ class TransactionOpt:
             return self.items.index(item, self.offset)
         except ValueError:
             return None
-        
+
     def get_active_items_tuple(self) -> tuple[int, ...]:
         """Returns active part of the transaction as tuple (hashable)"""
-        return tuple(self.items[self.offset:])
+        return tuple(self.items[self.offset :])
 
     def remove_infrequent_items(self, buckets: list[list[Self]], min_support: int):
         new_items = []

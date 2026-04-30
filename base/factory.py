@@ -1,9 +1,11 @@
 from pathlib import Path
 from typing import Optional
+from enum import Enum
 
 from .abstract_lcm import AbstractLCM
 from lcm.lcm import LCMAlgorithm
-from lcm.dataset import Dataset
+from lcm.lcm_intersec import LCMAlgorithmIntersec
+from lcm.dataset import Dataset, DatasetIntersec
 from base.output import LCMOutputToFile
 
 from lcm_opt.lcm import LCMAlgorithmOpt
@@ -12,12 +14,19 @@ from lcm_opt.dataset import DatasetOpt
 from extern.lcm_original import LCMOriginal
 
 
+class AlgorithmVersion(Enum):
+    ORIGINAL = "original"
+    CUSTOM = "custom"
+    INTERSEC = "intersec"
+    OPTIMIZED = "optimized"
+
+
 class AlgorithmFactory:
     """Factory for creating algorithm instances."""
 
     @staticmethod
     def create(
-        algorithm_type: str,
+        algorithm_version: AlgorithmVersion,
         input_file: Path,
         output_file: Path,
         min_support: float,
@@ -27,7 +36,7 @@ class AlgorithmFactory:
         Creates and returns an instance of the requested algorithm.
 
         Args:
-            algorithm_type: 'custom' or 'spmf'
+            algorithm_version
             input_file: Path to the dataset file
             output_file: Path where the output should be saved
             min_support: Minimum support threshold (0.0 to 1.0)
@@ -36,31 +45,40 @@ class AlgorithmFactory:
         Returns:
             An instance of a class inheriting from BaseAlgorithm.
         """
-        if algorithm_type == "custom":
-            with open(input_file) as f:
-                dataset = Dataset.from_stream(f)
-            output = LCMOutputToFile(output_file)
-            return LCMAlgorithm(
-                relative_minimum_support=min_support, dataset=dataset, output=output
-            )
+        match algorithm_version:
+            case AlgorithmVersion.CUSTOM:
+                with open(input_file) as f:
+                    dataset = Dataset.from_stream(f)
+                output = LCMOutputToFile(output_file)
+                return LCMAlgorithm(
+                    relative_minimum_support=min_support, dataset=dataset, output=output
+                )
 
-        elif algorithm_type == "optimized":
-            with open(input_file) as f:
-                dataset = DatasetOpt.from_stream(f)
-            output = LCMOutputToFile(output_file)
-            return LCMAlgorithmOpt(
-                relative_minimum_support=min_support, dataset=dataset, output=output
-            )
+            case AlgorithmVersion.INTERSEC:
+                with open(input_file) as f:
+                    dataset = DatasetIntersec.from_stream(f)
+                output = LCMOutputToFile(output_file)
+                return LCMAlgorithmIntersec(
+                    relative_minimum_support=min_support, dataset=dataset, output=output
+                )
 
-        elif algorithm_type == "spmf":
-            if not spmf_jar or not spmf_jar.exists():
-                raise FileNotFoundError(f"SPMF jar not found at: {spmf_jar}")
-            return LCMOriginal(
-                spmf_jar=spmf_jar,
-                input_file=input_file,
-                output_file=output_file,
-                min_support=min_support,
-            )
+            case AlgorithmVersion.OPTIMIZED:
+                with open(input_file) as f:
+                    dataset = DatasetOpt.from_stream(f)
+                output = LCMOutputToFile(output_file)
+                return LCMAlgorithmOpt(
+                    relative_minimum_support=min_support, dataset=dataset, output=output
+                )
 
-        else:
-            raise ValueError(f"Unknown algorithm type: {algorithm_type}")
+            case AlgorithmVersion.ORIGINAL:
+                if not spmf_jar or not spmf_jar.exists():
+                    raise FileNotFoundError(f"SPMF jar not found at: {spmf_jar}")
+                return LCMOriginal(
+                    spmf_jar=spmf_jar,
+                    input_file=input_file,
+                    output_file=output_file,
+                    min_support=min_support,
+                )
+
+            case _:
+                raise ValueError(f"Unknown algorithm type: {algorithm_type}")
