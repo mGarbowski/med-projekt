@@ -11,13 +11,13 @@ class DatasetOpt:
         self.unique_items = self._get_unique_items_from_transactions(transactions)
 
     @staticmethod
+    @profile
     def _get_unique_items_from_transactions(
         transactions: list[TransactionOpt],
     ) -> set[int]:
         unique_items = set()
         for transaction in transactions:
-            for item in transaction.items:
-                unique_items.add(item)
+            unique_items.update(transaction.items)
         return unique_items
 
     @staticmethod
@@ -29,7 +29,7 @@ class DatasetOpt:
         return max(transaction.items[-1] for transaction in transactions)
 
     @classmethod
-    @profile
+    # @profile
     def from_stream(cls, io: TextIO) -> Self:
         transactions = [
             TransactionOpt(items=tuple(map(int, line.split())))
