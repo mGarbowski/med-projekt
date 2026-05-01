@@ -1,8 +1,6 @@
 import bisect
 from typing import Self
 
-from .utils import is_sorted
-
 
 class TransactionOpt:
     items: list[int]
@@ -26,21 +24,11 @@ class TransactionOpt:
         else:
             self.interior_intersection = interior_intersection
 
-        # assert is_sorted(self.items), "Items must be in ascending order"
         assert 0 <= self.offset < len(self.items), (
             "Offset must be a valid index in the items list"
         )
 
     __slots__ = ('items', 'offset', 'weight', 'interior_intersection')
-
-    @classmethod
-    def with_offset(cls, transaction: Self, offset: int) -> Self:
-        return cls(
-            transaction.items,
-            offset,
-            transaction.weight,
-            interior_intersection=set(transaction.interior_intersection),
-        )
 
     def __eq__(self, other):
         return self.items == other.items and self.offset == other.offset
@@ -52,10 +40,6 @@ class TransactionOpt:
             return idx
             
         return None
-
-    def get_active_items_tuple(self) -> tuple[int, ...]:
-        """Returns active part of the transaction as tuple (hashable)"""
-        return tuple(self.items[self.offset :])
 
     def remove_infrequent_items(self, buckets: list[list[Self]], min_support: int):
         new_items = []

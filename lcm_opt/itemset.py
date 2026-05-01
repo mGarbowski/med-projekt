@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-from .utils import is_sorted
 from base.abstract_itemset import AbstractItemset
 
 
@@ -10,9 +9,6 @@ class ItemsetOpt(AbstractItemset):
     support: int
 
     __slots__ = ('items', 'support')
-
-    # def __post_init__(self):
-    #     assert is_sorted(self.items), "Items must be in ascending order"
 
     def to_spmf_line(self) -> str:
         return f"{' '.join(str(item) for item in self.items)} #SUP: {self.support}"

@@ -111,20 +111,45 @@ class LCMAlgorithmOpt(AbstractLCM):
     def intersect_transactions(
         transactions: list[TransactionOpt], item: int
     ) -> list[TransactionOpt]:
-        """Get transactions containing the union of items
+        """
+        Get transactions containing the union of items
         transactions is a list of transactions of itemset P
         this calculates the transaction list for itemset union(P, {item})
-        and truncates the transactions to keep what appears after item
+        also merges identical transactions combining their weigth and interior_intersection
         """
-        transactions_of_union = []
-        for transaction in transactions:
-            item_position = transaction.item_position(item)  # search after offset
-            if item_position is not None:
-                transactions_of_union.append(
-                    TransactionOpt.with_offset(transaction, item_position)
-                )
+        merged_dict = {} # for groupping transactions, key is an active part of transaciton (tuple - hashable)
 
-        return LCMAlgorithmOpt.merge_transactions(transactions_of_union)
+        for t in transactions:
+            pos = t.item_position(item)
+            if pos is not None:
+                key = tuple(t.items[pos:]) # active part of transaction
+
+                if key not in merged_dict:
+                    # first occurance, save data
+                    merged_dict[key] = [t.items, pos, t.weight, [t.interior_intersection]]
+                else:
+                    # next occurance, update weight and add interior_intersection
+                    merged_dict[key][2] += t.weight
+                    merged_dict[key][3].append(t.interior_intersection)
+
+        # now create TransactionOpt objects
+        result = []
+        for key, (orig_items, new_offset, total_weight, sets_list) in merged_dict.items():
+            
+            if len(sets_list) == 1:
+                new_intersection = set(sets_list[0]) # no merge, just copy
+            else:
+                new_intersection = set.intersection(*sets_list) # merge, intersec
+
+            # create final transaction
+            result.append(TransactionOpt(
+                items=orig_items,
+                offset=new_offset,
+                weight=total_weight,
+                interior_intersection=new_intersection
+            ))
+
+        return result
 
     @staticmethod
     def is_ppc_extension(
