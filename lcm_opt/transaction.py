@@ -28,7 +28,7 @@ class TransactionOpt:
             "Offset must be a valid index in the items list"
         )
 
-    __slots__ = ('items', 'offset', 'weight', 'interior_intersection')
+    __slots__ = ("items", "offset", "weight", "interior_intersection")
 
     def __eq__(self, other):
         return self.items == other.items and self.offset == other.offset
@@ -38,7 +38,7 @@ class TransactionOpt:
         idx = bisect.bisect_left(self.items, item, lo=self.offset)
         if idx != len(self.items) and self.items[idx] == item:
             return idx
-            
+
         return None
 
     def remove_infrequent_items(self, buckets: list[list[Self]], min_support: int):

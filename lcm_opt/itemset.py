@@ -8,7 +8,7 @@ class ItemsetOpt(AbstractItemset):
     items: list[int]
     support: int
 
-    __slots__ = ('items', 'support')
+    __slots__ = ("items", "support")
 
     def to_spmf_line(self) -> str:
         return f"{' '.join(str(item) for item in self.items)} #SUP: {self.support}"

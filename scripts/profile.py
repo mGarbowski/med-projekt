@@ -60,7 +60,11 @@ class BenchmarkResult:
 
 
 def benchmark_run(
-    dataset_file: Path, min_support: float, algorithm_version: str, output_mode: Literal["file", "memory"], spmf_jar: Path
+    dataset_file: Path,
+    min_support: float,
+    algorithm_version: str,
+    output_mode: Literal["file", "memory"],
+    spmf_jar: Path,
 ) -> SingleBenchmarkResult:
     tracemalloc.start()
     tracemalloc.reset_peak()
@@ -138,7 +142,9 @@ def main():
         )
 
     results = [
-        benchmark_run(args.input, args.minsup, args.algorithm, args.output_mode, args.spmf_jar)
+        benchmark_run(
+            args.input, args.minsup, args.algorithm, args.output_mode, args.spmf_jar
+        )
         for _ in range(args.num_samples)
     ]
 

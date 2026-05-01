@@ -56,21 +56,27 @@ class AlgorithmFactory:
                 with open(input_file) as f:
                     dataset = Dataset.from_stream(f)
                 return LCMAlgorithm(
-                    relative_minimum_support=min_support, dataset=dataset, output=output_handler
+                    relative_minimum_support=min_support,
+                    dataset=dataset,
+                    output=output_handler,
                 )
 
             case AlgorithmVersion.INTERSEC:
                 with open(input_file) as f:
                     dataset = DatasetIntersec.from_stream(f)
                 return LCMAlgorithmIntersec(
-                    relative_minimum_support=min_support, dataset=dataset, output=output_handler
+                    relative_minimum_support=min_support,
+                    dataset=dataset,
+                    output=output_handler,
                 )
 
             case AlgorithmVersion.OPTIMIZED:
                 with open(input_file) as f:
                     dataset = DatasetOpt.from_stream(f)
                 return LCMAlgorithmOpt(
-                    relative_minimum_support=min_support, dataset=dataset, output=output_handler
+                    relative_minimum_support=min_support,
+                    dataset=dataset,
+                    output=output_handler,
                 )
 
             case AlgorithmVersion.ORIGINAL:

@@ -9,7 +9,6 @@ from .transaction import Transaction
 from .dataset import Dataset
 
 
-# TODO abstract output
 class LCMAlgorithm(AbstractLCM):
     """Implementation of Linear time Closed itemset Miner algorithm.
 
@@ -34,7 +33,7 @@ class LCMAlgorithm(AbstractLCM):
     def close(self) -> None:
         """Delegates closing/saving to the output handler."""
         self.output.close()
-    
+
     def run(self):
         for transaction in self.dataset.transactions:
             transaction.remove_infrequent_items(self.buckets, self.minimum_support)

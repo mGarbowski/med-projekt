@@ -9,7 +9,6 @@ from .transaction import TransactionIntersec
 from .dataset import DatasetIntersec
 
 
-# TODO abstract output
 class LCMAlgorithmIntersec(AbstractLCM):
     """Optimized implementation of Linear time Closed itemset Miner algorithm.
 

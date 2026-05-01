@@ -11,7 +11,6 @@ from .transaction import TransactionOpt
 from .dataset import DatasetOpt
 
 
-# TODO abstract output
 class LCMAlgorithmOpt(AbstractLCM):
     """Optimized implementation of Linear time Closed itemset Miner algorithm.
 
@@ -78,7 +77,9 @@ class LCMAlgorithmOpt(AbstractLCM):
                 self.output.save(ItemsetOpt(items=itemset, support=support))
 
                 self.anytime_database_reduction(
-                    transactions_of_union, idx, frequent_items #, item
+                    transactions_of_union,
+                    idx,
+                    frequent_items,  # , item
                 )
 
                 new_frequent_items = []
@@ -101,7 +102,7 @@ class LCMAlgorithmOpt(AbstractLCM):
         valid_targets = set()
         for i in range(idx_in_frequent_items + 1, len(frequent_items)):
             item = frequent_items[i]
-            self.buckets[item].clear() 
+            self.buckets[item].clear()
             valid_targets.add(item)
 
         if not valid_targets:
@@ -113,7 +114,6 @@ class LCMAlgorithmOpt(AbstractLCM):
                 if item in valid_targets:
                     self.buckets[item].append(transaction)
 
-
     @staticmethod
     def intersect_transactions(
         transactions: list[TransactionOpt], item: int
@@ -124,16 +124,21 @@ class LCMAlgorithmOpt(AbstractLCM):
         this calculates the transaction list for itemset union(P, {item})
         also merges identical transactions combining their weigth and interior_intersection
         """
-        merged_dict = {} # for groupping transactions, key is an active part of transaciton (tuple - hashable)
+        merged_dict = {}  # for groupping transactions, key is an active part of transaciton (tuple - hashable)
 
         for t in transactions:
             pos = t.item_position(item)
             if pos is not None:
-                key = tuple(t.items[pos:]) # active part of transaction
+                key = tuple(t.items[pos:])  # active part of transaction
 
                 if key not in merged_dict:
                     # first occurance, save data
-                    merged_dict[key] = [t.items, pos, t.weight, [t.interior_intersection]]
+                    merged_dict[key] = [
+                        t.items,
+                        pos,
+                        t.weight,
+                        [t.interior_intersection],
+                    ]
                 else:
                     # next occurance, update weight and add interior_intersection
                     merged_dict[key][2] += t.weight
@@ -141,20 +146,26 @@ class LCMAlgorithmOpt(AbstractLCM):
 
         # now create TransactionOpt objects
         result = []
-        for key, (orig_items, new_offset, total_weight, sets_list) in merged_dict.items():
-            
+        for key, (
+            orig_items,
+            new_offset,
+            total_weight,
+            sets_list,
+        ) in merged_dict.items():
             if len(sets_list) == 1:
-                new_intersection = set(sets_list[0]) # no merge, just copy
+                new_intersection = set(sets_list[0])  # no merge, just copy
             else:
-                new_intersection = set.intersection(*sets_list) # merge, intersec
+                new_intersection = set.intersection(*sets_list)  # merge, intersec
 
             # create final transaction
-            result.append(TransactionOpt(
-                items=orig_items,
-                offset=new_offset,
-                weight=total_weight,
-                interior_intersection=new_intersection
-            ))
+            result.append(
+                TransactionOpt(
+                    items=orig_items,
+                    offset=new_offset,
+                    weight=total_weight,
+                    interior_intersection=new_intersection,
+                )
+            )
 
         return result
 
@@ -167,7 +178,7 @@ class LCMAlgorithmOpt(AbstractLCM):
         for item in first_t.interior_intersection:
             if item < e:
                 idx = bisect.bisect_left(prefix, item)
-                is_in_prefix = (idx != len(prefix) and prefix[idx] == item)
+                is_in_prefix = idx != len(prefix) and prefix[idx] == item
 
                 if not is_in_prefix:
                     if LCMAlgorithmOpt.is_item_in_all_transactions_except_first(
