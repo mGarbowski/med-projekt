@@ -25,7 +25,6 @@ class LCMAlgorithmOpt(AbstractLCM):
             raise ValueError("Relative minimum support value must be between 0 and 1")
 
         self.output = output
-        self.frequent_count = 0
         self.minimum_support = self._convert_relative_support_to_absolute(
             relative_minimum_support, dataset
         )
@@ -95,6 +94,7 @@ class LCMAlgorithmOpt(AbstractLCM):
                     itemset, transactions_of_union, new_frequent_items, item_tail_idx
                 )
 
+    # @profile
     def anytime_database_reduction(
         self,
         transactions_of_union: list[TransactionOpt],
@@ -113,9 +113,10 @@ class LCMAlgorithmOpt(AbstractLCM):
 
         # no need for item > item_e as valid_targets has only bigger elements
         for transaction in transactions_of_union:
-            for item in islice(transaction.items, transaction.offset + 1, None):
-                if item in valid_targets:
-                    self.buckets[item].append(transaction)
+            active_items = set(transaction.items[transaction.offset + 1:])
+        
+            for item in active_items.intersection(valid_targets): # is item in active items
+                self.buckets[item].append(transaction)
 
     @staticmethod
     # @profile
@@ -131,8 +132,11 @@ class LCMAlgorithmOpt(AbstractLCM):
         merged_dict = {}  # for groupping transactions, key is an active part of transaciton (tuple - hashable)
 
         for t in transactions:
+            if item not in t.interior_intersection:
+                continue
+
             pos = t.item_position(item)
-            if pos is not None:
+            if pos is not None: 
                 key = t.items[pos:]  # active part of transaction
 
                 if key not in merged_dict:
@@ -180,18 +184,15 @@ class LCMAlgorithmOpt(AbstractLCM):
     ) -> bool:
         """Check if union(prefix, {e}) is a prefix-preserving closure extension"""
         first_t = transactions_of_union[0]
+        check = LCMAlgorithmOpt.is_item_in_all_transactions_except_first  # local ref
+        
         for item in first_t.interior_intersection:
-            if (
-                item < e and
-                item not in prefix and # binary search is not better here
-                LCMAlgorithmOpt.is_item_in_all_transactions_except_first(
-                    transactions_of_union, item
-                )
-            ):
+            if item < e and item not in prefix and check(transactions_of_union, item):
                 return False
         return True
 
     @staticmethod
+    # @profile
     def is_item_in_all_transactions_except_first(
         transactions: list[TransactionOpt], item: int
     ):
@@ -201,14 +202,17 @@ class LCMAlgorithmOpt(AbstractLCM):
         return True
 
     @staticmethod
+    # @profile
     def is_item_in_all_transactions(
         transactions: list[TransactionOpt], item: int
     ) -> bool:
-        return all(
-            item in transaction.interior_intersection for transaction in transactions
-        )
+        for transaction in transactions:
+            if item not in transaction.interior_intersection:
+                return False
+        return True
 
     @staticmethod
+    # @profile
     def _initial_occurrence_delivery(
         dataset: DatasetOpt,
     ) -> list[list[TransactionOpt]]:
