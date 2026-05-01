@@ -30,11 +30,11 @@ class DatasetOpt:
     @classmethod
     def from_stream(cls, io: TextIO) -> Self:
         transactions = [
-            TransactionOpt(items=[int(num) for num in line.strip().split()])
+            TransactionOpt(items=tuple([int(num) for num in line.strip().split()]))
             for line in io.readlines()
         ]
         return cls(transactions)
 
     @classmethod
-    def from_lists(cls, item_lists: list[list[int]]) -> Self:
+    def from_lists(cls, item_lists: list[tuple[int, ...]]) -> Self:
         return cls([TransactionOpt(items) for items in item_lists])

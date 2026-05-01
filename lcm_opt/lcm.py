@@ -2,6 +2,7 @@ import bisect
 import math
 from itertools import islice
 from typing import override
+from line_profiler import profile
 
 from base.abstract_lcm import AbstractLCM
 from base.output import LCMOutput
@@ -17,6 +18,7 @@ class LCMAlgorithmOpt(AbstractLCM):
     For finding frequent, closed itemsets in a transaction database.
     """
 
+    # @profile
     def __init__(
         self, relative_minimum_support: float, dataset: DatasetOpt, output: LCMOutput
     ):
@@ -36,6 +38,7 @@ class LCMAlgorithmOpt(AbstractLCM):
         """Delegates closing/saving to the output handler."""
         self.output.close()
 
+    # @profile
     def run(self):
         for transaction in self.dataset.transactions:
             transaction.remove_infrequent_items(self.buckets, self.minimum_support)
@@ -49,6 +52,7 @@ class LCMAlgorithmOpt(AbstractLCM):
         )
         self.backtracking_lcm([], self.dataset.transactions, all_frequent_items, -1)
 
+    @profile
     def backtracking_lcm(
         self,
         prefix: list[int],
@@ -129,7 +133,7 @@ class LCMAlgorithmOpt(AbstractLCM):
         for t in transactions:
             pos = t.item_position(item)
             if pos is not None:
-                key = tuple(t.items[pos:])  # active part of transaction
+                key = t.items[pos:]  # active part of transaction
 
                 if key not in merged_dict:
                     # first occurance, save data

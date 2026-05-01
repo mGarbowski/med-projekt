@@ -3,14 +3,14 @@ from typing import Self
 
 
 class TransactionOpt:
-    items: list[int]
+    items: tuple[int, ...]
     offset: int
     weight: int
     interior_intersection: set[int]
 
     def __init__(
         self,
-        items: list[int],
+        items: tuple[int, ...],
         offset: int = 0,
         weight: int = 1,
         interior_intersection: set[int] | None = None,
@@ -46,5 +46,5 @@ class TransactionOpt:
         for item in self.items:
             if len(buckets[item]) >= min_support:
                 new_items.append(item)
-        self.items = new_items
+        self.items = tuple(new_items)
         self.interior_intersection = set(self.items)
