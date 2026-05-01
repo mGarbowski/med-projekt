@@ -1,6 +1,5 @@
-import bisect
 from typing import Self
-
+from line_profiler import profile
 
 class TransactionOpt:
     items: tuple[int, ...]
@@ -34,12 +33,11 @@ class TransactionOpt:
         return self.items == other.items and self.offset == other.offset
 
     def item_position(self, item: int) -> int | None:
-        # binary search
-        idx = bisect.bisect_left(self.items, item, lo=self.offset)
-        if idx != len(self.items) and self.items[idx] == item:
-            return idx
-
-        return None
+        # binary search is not better here
+        try:
+            return self.items.index(item, self.offset)
+        except ValueError:
+            return None
 
     def remove_infrequent_items(self, buckets: list[list[Self]], min_support: int):
         new_items = []

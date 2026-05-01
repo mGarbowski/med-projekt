@@ -1,4 +1,3 @@
-import bisect
 import math
 from itertools import islice
 from typing import override
@@ -119,6 +118,7 @@ class LCMAlgorithmOpt(AbstractLCM):
                     self.buckets[item].append(transaction)
 
     @staticmethod
+    # @profile
     def intersect_transactions(
         transactions: list[TransactionOpt], item: int
     ) -> list[TransactionOpt]:
@@ -157,7 +157,7 @@ class LCMAlgorithmOpt(AbstractLCM):
             sets_list,
         ) in merged_dict.items():
             if len(sets_list) == 1:
-                new_intersection = set(sets_list[0])  # no merge, just copy
+                new_intersection = sets_list[0]  # no merge, just copy
             else:
                 new_intersection = set.intersection(*sets_list)  # merge, intersec
 
@@ -174,21 +174,21 @@ class LCMAlgorithmOpt(AbstractLCM):
         return result
 
     @staticmethod
+    # @profile
     def is_ppc_extension(
         prefix: list[int], transactions_of_union: list[TransactionOpt], e: int
     ) -> bool:
         """Check if union(prefix, {e}) is a prefix-preserving closure extension"""
         first_t = transactions_of_union[0]
         for item in first_t.interior_intersection:
-            if item < e:
-                idx = bisect.bisect_left(prefix, item)
-                is_in_prefix = idx != len(prefix) and prefix[idx] == item
-
-                if not is_in_prefix:
-                    if LCMAlgorithmOpt.is_item_in_all_transactions_except_first(
-                        transactions_of_union, item
-                    ):
-                        return False
+            if (
+                item < e and
+                item not in prefix and # binary search is not better here
+                LCMAlgorithmOpt.is_item_in_all_transactions_except_first(
+                    transactions_of_union, item
+                )
+            ):
+                return False
         return True
 
     @staticmethod

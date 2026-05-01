@@ -1,5 +1,4 @@
 from typing import TextIO, Self
-from line_profiler import profile
 
 from .transaction import TransactionOpt
 
@@ -11,7 +10,6 @@ class DatasetOpt:
         self.unique_items = self._get_unique_items_from_transactions(transactions)
 
     @staticmethod
-    @profile
     def _get_unique_items_from_transactions(
         transactions: list[TransactionOpt],
     ) -> set[int]:
@@ -29,7 +27,6 @@ class DatasetOpt:
         return max((t.items[-1] for t in transactions if t.items), default=0)
 
     @classmethod
-    # @profile
     def from_stream(cls, io: TextIO) -> Self:
         transactions = [
             TransactionOpt(items=tuple(map(int, line.split())))
