@@ -1,7 +1,5 @@
 import math
-from itertools import islice
 from typing import override
-from line_profiler import profile
 
 from base.abstract_lcm import AbstractLCM
 from base.output import LCMOutput
@@ -17,7 +15,6 @@ class LCMAlgorithmOpt(AbstractLCM):
     For finding frequent, closed itemsets in a transaction database.
     """
 
-    # @profile
     def __init__(
         self, relative_minimum_support: float, dataset: DatasetOpt, output: LCMOutput
     ):
@@ -36,7 +33,6 @@ class LCMAlgorithmOpt(AbstractLCM):
         """Delegates closing/saving to the output handler."""
         self.output.close()
 
-    # @profile
     def run(self):
         for transaction in self.dataset.transactions:
             transaction.remove_infrequent_items(self.buckets, self.minimum_support)
@@ -50,7 +46,6 @@ class LCMAlgorithmOpt(AbstractLCM):
         )
         self.backtracking_lcm([], self.dataset.transactions, all_frequent_items, -1)
 
-    @profile
     def backtracking_lcm(
         self,
         prefix: list[int],
@@ -94,7 +89,6 @@ class LCMAlgorithmOpt(AbstractLCM):
                     itemset, transactions_of_union, new_frequent_items, item_tail_idx
                 )
 
-    # @profile
     def anytime_database_reduction(
         self,
         transactions_of_union: list[TransactionOpt],
@@ -113,13 +107,14 @@ class LCMAlgorithmOpt(AbstractLCM):
 
         # no need for item > item_e as valid_targets has only bigger elements
         for transaction in transactions_of_union:
-            active_items = set(transaction.items[transaction.offset + 1:])
-        
-            for item in active_items.intersection(valid_targets): # is item in active items
+            active_items = set(transaction.items[transaction.offset + 1 :])
+
+            for item in active_items.intersection(
+                valid_targets
+            ):  # is item in active items
                 self.buckets[item].append(transaction)
 
     @staticmethod
-    # @profile
     def intersect_transactions(
         transactions: list[TransactionOpt], item: int
     ) -> list[TransactionOpt]:
@@ -136,7 +131,7 @@ class LCMAlgorithmOpt(AbstractLCM):
                 continue
 
             pos = t.item_position(item)
-            if pos is not None: 
+            if pos is not None:
                 key = t.items[pos:]  # active part of transaction
 
                 if key not in merged_dict:
@@ -178,21 +173,19 @@ class LCMAlgorithmOpt(AbstractLCM):
         return result
 
     @staticmethod
-    # @profile
     def is_ppc_extension(
         prefix: list[int], transactions_of_union: list[TransactionOpt], e: int
     ) -> bool:
         """Check if union(prefix, {e}) is a prefix-preserving closure extension"""
         first_t = transactions_of_union[0]
         check = LCMAlgorithmOpt.is_item_in_all_transactions_except_first  # local ref
-        
+
         for item in first_t.interior_intersection:
             if item < e and item not in prefix and check(transactions_of_union, item):
                 return False
         return True
 
     @staticmethod
-    # @profile
     def is_item_in_all_transactions_except_first(
         transactions: list[TransactionOpt], item: int
     ):
@@ -202,7 +195,6 @@ class LCMAlgorithmOpt(AbstractLCM):
         return True
 
     @staticmethod
-    # @profile
     def is_item_in_all_transactions(
         transactions: list[TransactionOpt], item: int
     ) -> bool:
@@ -212,7 +204,6 @@ class LCMAlgorithmOpt(AbstractLCM):
         return True
 
     @staticmethod
-    # @profile
     def _initial_occurrence_delivery(
         dataset: DatasetOpt,
     ) -> list[list[TransactionOpt]]:

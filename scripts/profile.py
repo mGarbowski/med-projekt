@@ -106,8 +106,8 @@ def main():
         "--algorithm",
         type=str,
         choices=[e.value for e in AlgorithmVersion],
-        default="custom",
-        help="Algorithm implementation to use (default: 'custom')",
+        default=AlgorithmVersion.OPTIMIZED,
+        help="Algorithm implementation to use (default: 'optimized')",
     )
     parser.add_argument(
         "-m",

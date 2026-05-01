@@ -29,8 +29,7 @@ class DatasetOpt:
     @classmethod
     def from_stream(cls, io: TextIO) -> Self:
         transactions = [
-            TransactionOpt(items=tuple(map(int, line.split())))
-            for line in io
+            TransactionOpt(items=tuple(map(int, line.split()))) for line in io
         ]
         return cls(transactions)
 

@@ -119,7 +119,7 @@ class TestLcm:
             == expected_absolute
         )
 
-    def test_example_dataset(self):
+    def test_example_dataset(self, tmp_path):
         dataset = Dataset.from_lists(
             [
                 [1, 3, 4],
@@ -129,7 +129,8 @@ class TestLcm:
                 [1, 2, 3, 5],
             ]
         )
-        output = LCMOutputInMemory()
+        output_file = tmp_path / "output.txt"
+        output = LCMOutputInMemory(output_file)
         lcm = LCMAlgorithm(0.4, dataset, output)
         lcm.run()
         result = output.itemsets

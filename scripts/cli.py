@@ -1,11 +1,10 @@
 import sys
 from argparse import ArgumentParser
 from pathlib import Path
-from line_profiler import profile
 
 from base.factory import AlgorithmFactory, AlgorithmVersion
 
-# @profile
+
 def main():
     parser = ArgumentParser()
     parser.add_argument("-i", "--input", type=Path, required=True)
@@ -16,8 +15,8 @@ def main():
         "--algorithm",
         type=str,
         choices=[e.value for e in AlgorithmVersion],
-        default="custom",
-        help="Algorithm implementation to use (default: 'custom')",
+        default=AlgorithmVersion.OPTIMIZED,
+        help="Algorithm implementation to use (default: 'optimized')",
     )
     parser.add_argument(
         "-m",

@@ -9,7 +9,7 @@ from lcm.lcm import LCMAlgorithm
 from lcm.lcm_intersec import LCMAlgorithmIntersec
 from lcm_opt.dataset import DatasetOpt
 from lcm_opt.lcm import LCMAlgorithmOpt
-from extern.lcm_original import LCMOriginal
+from extern.lcm_spmf import LCMSpmf
 from base.output import LCMOutputToFile
 
 
@@ -26,7 +26,7 @@ def _compute_spmf(
     spmf_jar: Path, input_file: Path, output_file: Path, min_support: float
 ) -> None:
     """Compute closed frequent itemsets using SPMF."""
-    LCMOriginal(spmf_jar, input_file, output_file, min_support).run()
+    LCMSpmf(spmf_jar, input_file, output_file, min_support).run()
 
 
 def _compute_this(input_file: Path, output_file: Path, min_support: float) -> None:

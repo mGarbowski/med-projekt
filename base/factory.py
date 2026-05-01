@@ -13,8 +13,6 @@ from lcm_opt.dataset import DatasetOpt
 
 from extern.lcm_spmf import LCMSpmf
 
-from line_profiler import profile
-
 
 class AlgorithmVersion(Enum):
     SPMF = "spmf"
@@ -27,7 +25,6 @@ class AlgorithmFactory:
     """Factory for creating algorithm instances."""
 
     @staticmethod
-    # @profile
     def create(
         algorithm_version: AlgorithmVersion,
         input_file: Path,
