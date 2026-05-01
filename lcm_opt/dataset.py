@@ -1,4 +1,5 @@
 from typing import TextIO, Self
+from line_profiler import profile
 
 from .transaction import TransactionOpt
 
@@ -28,10 +29,11 @@ class DatasetOpt:
         return max(transaction.items[-1] for transaction in transactions)
 
     @classmethod
+    @profile
     def from_stream(cls, io: TextIO) -> Self:
         transactions = [
-            TransactionOpt(items=tuple([int(num) for num in line.strip().split()]))
-            for line in io.readlines()
+            TransactionOpt(items=tuple(map(int, line.split())))
+            for line in io
         ]
         return cls(transactions)
 
