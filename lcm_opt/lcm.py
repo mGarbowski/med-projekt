@@ -1,5 +1,6 @@
 import bisect
 import math
+from itertools import islice
 
 from base.abstract_lcm import AbstractLCM
 from base.output import LCMOutput
@@ -71,7 +72,7 @@ class LCMAlgorithmOpt(AbstractLCM):
                 self.output.save(ItemsetOpt(items=itemset, support=support))
 
                 self.anytime_database_reduction(
-                    transactions_of_union, idx, frequent_items, item
+                    transactions_of_union, idx, frequent_items #, item
                 )
 
                 new_frequent_items = []
@@ -89,14 +90,21 @@ class LCMAlgorithmOpt(AbstractLCM):
         transactions_of_union: list[TransactionOpt],
         idx_in_frequent_items: int,
         frequent_items: list[int],
-        item_e: int,
+        # item_e: int,
     ):
-        for item in frequent_items[idx_in_frequent_items + 1 :]:
-            self.buckets[item] = []
+        valid_targets = set()
+        for i in range(idx_in_frequent_items + 1, len(frequent_items)):
+            item = frequent_items[i]
+            self.buckets[item].clear() 
+            valid_targets.add(item)
 
+        if not valid_targets:
+            return
+
+        # no need for item > item_e as valid_targets has only bigger elements
         for transaction in transactions_of_union:
-            for item in transaction.items[: transaction.offset : -1]:
-                if item > item_e and item in frequent_items:
+            for item in islice(transaction.items, transaction.offset + 1, None):
+                if item in valid_targets:
                     self.buckets[item].append(transaction)
 
     @staticmethod
@@ -178,8 +186,9 @@ class LCMAlgorithmOpt(AbstractLCM):
         dataset: DatasetOpt,
     ) -> list[list[TransactionOpt]]:
         buckets = [[] for _ in range(dataset.max_item + 1)]
+        transactions = dataset.transactions
 
-        for transaction in dataset.transactions:
+        for transaction in transactions:
             for item in transaction.items:
                 buckets[item].append(transaction)
 
