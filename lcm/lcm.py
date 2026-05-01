@@ -1,4 +1,5 @@
 import math
+from typing import override
 
 from base.abstract_lcm import AbstractLCM
 from base.output import LCMOutput
@@ -29,6 +30,11 @@ class LCMAlgorithm(AbstractLCM):
         self.dataset = dataset
         self.buckets = self._initial_occurrence_delivery(dataset)
 
+    @override
+    def close(self) -> None:
+        """Delegates closing/saving to the output handler."""
+        self.output.close()
+    
     def run(self):
         for transaction in self.dataset.transactions:
             transaction.remove_infrequent_items(self.buckets, self.minimum_support)

@@ -19,6 +19,14 @@ def main():
         help="Algorithm implementation to use (default: 'custom')",
     )
     parser.add_argument(
+        "-m",
+        "--output-mode",
+        type=str,
+        choices=["file", "memory"],
+        default="file",
+        help="Choose where to save itemsets during execution (default: 'file')",
+    )
+    parser.add_argument(
         "--spmf-jar",
         type=Path,
         default=Path("extern/spmf.jar"),
@@ -41,10 +49,12 @@ def main():
         input_file=args.input,
         output_file=args.output,
         min_support=args.minsup,
+        output_mode=args.output_mode,
         spmf_jar=args.spmf_jar,
     )
 
     algorithm.run()
+    algorithm.close()
 
 
 if __name__ == "__main__":

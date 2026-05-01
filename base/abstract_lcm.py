@@ -8,3 +8,7 @@ class AbstractLCM(ABC):
     def run(self) -> None:
         """Executes the algorithm."""
         pass
+
+    def close(self) -> None:
+        """Optional cleanup or finalization method (e.g., saving memory to file)."""
+        pass

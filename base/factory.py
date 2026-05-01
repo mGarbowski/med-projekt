@@ -1,12 +1,12 @@
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Literal
 from enum import Enum
 
 from .abstract_lcm import AbstractLCM
 from lcm.lcm import LCMAlgorithm
 from lcm.lcm_intersec import LCMAlgorithmIntersec
 from lcm.dataset import Dataset, DatasetIntersec
-from base.output import LCMOutputToFile
+from base.output import LCMOutputToFile, LCMOutputInMemory
 
 from lcm_opt.lcm import LCMAlgorithmOpt
 from lcm_opt.dataset import DatasetOpt
@@ -30,6 +30,7 @@ class AlgorithmFactory:
         input_file: Path,
         output_file: Path,
         min_support: float,
+        output_mode: Literal["file", "memory"] = "file",
         spmf_jar: Optional[Path] = None,
     ) -> AbstractLCM:
         """
@@ -45,29 +46,31 @@ class AlgorithmFactory:
         Returns:
             An instance of a class inheriting from BaseAlgorithm.
         """
+        if output_mode == "memory":
+            output_handler = LCMOutputInMemory(output_file)
+        else:
+            output_handler = LCMOutputToFile(output_file)
+
         match algorithm_version:
             case AlgorithmVersion.CUSTOM:
                 with open(input_file) as f:
                     dataset = Dataset.from_stream(f)
-                output = LCMOutputToFile(output_file)
                 return LCMAlgorithm(
-                    relative_minimum_support=min_support, dataset=dataset, output=output
+                    relative_minimum_support=min_support, dataset=dataset, output=output_handler
                 )
 
             case AlgorithmVersion.INTERSEC:
                 with open(input_file) as f:
                     dataset = DatasetIntersec.from_stream(f)
-                output = LCMOutputToFile(output_file)
                 return LCMAlgorithmIntersec(
-                    relative_minimum_support=min_support, dataset=dataset, output=output
+                    relative_minimum_support=min_support, dataset=dataset, output=output_handler
                 )
 
             case AlgorithmVersion.OPTIMIZED:
                 with open(input_file) as f:
                     dataset = DatasetOpt.from_stream(f)
-                output = LCMOutputToFile(output_file)
                 return LCMAlgorithmOpt(
-                    relative_minimum_support=min_support, dataset=dataset, output=output
+                    relative_minimum_support=min_support, dataset=dataset, output=output_handler
                 )
 
             case AlgorithmVersion.ORIGINAL:

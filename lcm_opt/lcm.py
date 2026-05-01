@@ -1,6 +1,7 @@
 import bisect
 import math
 from itertools import islice
+from typing import override
 
 from base.abstract_lcm import AbstractLCM
 from base.output import LCMOutput
@@ -30,6 +31,11 @@ class LCMAlgorithmOpt(AbstractLCM):
         )
         self.dataset = dataset
         self.buckets = self._initial_occurrence_delivery(dataset)
+
+    @override
+    def close(self) -> None:
+        """Delegates closing/saving to the output handler."""
+        self.output.close()
 
     def run(self):
         for transaction in self.dataset.transactions:
@@ -106,6 +112,7 @@ class LCMAlgorithmOpt(AbstractLCM):
             for item in islice(transaction.items, transaction.offset + 1, None):
                 if item in valid_targets:
                     self.buckets[item].append(transaction)
+
 
     @staticmethod
     def intersect_transactions(
@@ -185,26 +192,6 @@ class LCMAlgorithmOpt(AbstractLCM):
         return all(
             item in transaction.interior_intersection for transaction in transactions
         )
-
-    @staticmethod
-    def merge_transactions(transactions: list[TransactionOpt]) -> list[TransactionOpt]:
-        """Merges identical transactions"""
-        merged_dict: dict[tuple[int, ...], TransactionOpt] = {}
-
-        for t in transactions:
-            key = t.get_active_items_tuple()
-
-            if key not in merged_dict:
-                merged_dict[key] = t
-            else:
-                # merge duplicate transactions
-                existing_t = merged_dict[key]
-                existing_t.weight += t.weight
-                existing_t.interior_intersection.intersection_update(
-                    t.interior_intersection
-                )
-
-        return list(merged_dict.values())  # list of unique transactions after merge
 
     @staticmethod
     def _initial_occurrence_delivery(

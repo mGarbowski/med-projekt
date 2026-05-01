@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from statistics import mean, stdev
 from time import perf_counter_ns
+from typing import Literal
 
 from base.factory import AlgorithmFactory, AlgorithmVersion
 
@@ -59,7 +60,7 @@ class BenchmarkResult:
 
 
 def benchmark_run(
-    dataset_file: Path, min_support: float, algorithm_version: str, spmf_jar: Path
+    dataset_file: Path, min_support: float, algorithm_version: str, output_mode: Literal["file", "memory"], spmf_jar: Path
 ) -> SingleBenchmarkResult:
     tracemalloc.start()
     tracemalloc.reset_peak()
@@ -74,9 +75,11 @@ def benchmark_run(
             input_file=dataset_file,
             output_file=output_path,
             min_support=min_support,
+            output_mode=output_mode,
             spmf_jar=spmf_jar,
         )
         algorithm.run()
+        algorithm.close()
 
     after_current, after_peak = tracemalloc.get_traced_memory()
     time_end = perf_counter_ns()
@@ -103,6 +106,14 @@ def main():
         help="Algorithm implementation to use (default: 'custom')",
     )
     parser.add_argument(
+        "-m",
+        "--output-mode",
+        type=str,
+        choices=["file", "memory"],
+        default="file",
+        help="Choose where to save itemsets during execution (default: 'file')",
+    )
+    parser.add_argument(
         "--spmf-jar",
         type=Path,
         default=Path("extern/spmf.jar"),
@@ -127,7 +138,7 @@ def main():
         )
 
     results = [
-        benchmark_run(args.input, args.minsup, args.algorithm, args.spmf_jar)
+        benchmark_run(args.input, args.minsup, args.algorithm, args.output_mode, args.spmf_jar)
         for _ in range(args.num_samples)
     ]
 
