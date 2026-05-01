@@ -4,7 +4,7 @@ from pathlib import Path
 from base.abstract_lcm import AbstractLCM
 
 
-class LCMOriginal(AbstractLCM):
+class LCMSpmf(AbstractLCM):
     """Wrapper for the reference LCM implementation in the SPMF library (Java)."""
 
     def __init__(

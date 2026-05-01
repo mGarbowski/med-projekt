@@ -1,10 +1,11 @@
 import sys
 from argparse import ArgumentParser
 from pathlib import Path
+from line_profiler import profile
 
 from base.factory import AlgorithmFactory, AlgorithmVersion
 
-
+# @profile
 def main():
     parser = ArgumentParser()
     parser.add_argument("-i", "--input", type=Path, required=True)

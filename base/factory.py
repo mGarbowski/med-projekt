@@ -11,11 +11,13 @@ from base.output import LCMOutputToFile, LCMOutputInMemory
 from lcm_opt.lcm import LCMAlgorithmOpt
 from lcm_opt.dataset import DatasetOpt
 
-from extern.lcm_original import LCMOriginal
+from extern.lcm_spmf import LCMSpmf
+
+from line_profiler import profile
 
 
 class AlgorithmVersion(Enum):
-    ORIGINAL = "original"
+    SPMF = "spmf"
     CUSTOM = "custom"
     INTERSEC = "intersec"
     OPTIMIZED = "optimized"
@@ -25,6 +27,7 @@ class AlgorithmFactory:
     """Factory for creating algorithm instances."""
 
     @staticmethod
+    # @profile
     def create(
         algorithm_version: AlgorithmVersion,
         input_file: Path,
@@ -79,10 +82,10 @@ class AlgorithmFactory:
                     output=output_handler,
                 )
 
-            case AlgorithmVersion.ORIGINAL:
+            case AlgorithmVersion.SPMF:
                 if not spmf_jar or not spmf_jar.exists():
                     raise FileNotFoundError(f"SPMF jar not found at: {spmf_jar}")
-                return LCMOriginal(
+                return LCMSpmf(
                     spmf_jar=spmf_jar,
                     input_file=input_file,
                     output_file=output_file,
@@ -90,4 +93,4 @@ class AlgorithmFactory:
                 )
 
             case _:
-                raise ValueError(f"Unknown algorithm type: {algorithm_type}")
+                raise ValueError(f"Unknown algorithm type: {algorithm_version}")
