@@ -26,7 +26,7 @@ class DatasetOpt:
 
         Transaction items are sorted
         """
-        return max(transaction.items[-1] for transaction in transactions)
+        return max((t.items[-1] for t in transactions if t.items), default=0)
 
     @classmethod
     # @profile
