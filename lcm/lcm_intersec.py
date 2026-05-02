@@ -1,4 +1,5 @@
 import math
+from pathlib import Path
 from typing import override
 
 from base.abstract_lcm import AbstractLCM
@@ -18,18 +19,22 @@ class LCMAlgorithmIntersec(AbstractLCM):
     def __init__(
         self,
         relative_minimum_support: float,
-        dataset: DatasetIntersec,
+        input_file: Path,
         output: LCMOutput,
     ):
         if not (0 <= relative_minimum_support <= 1):
             raise ValueError("Relative minimum support value must be between 0 and 1")
 
         self.output = output
+
+        with open(input_file) as f:
+            dataset = DatasetIntersec.from_stream(f)
+        self.dataset = dataset
+
         self.frequent_count = 0
         self.minimum_support = self._convert_relative_support_to_absolute(
             relative_minimum_support, dataset
         )
-        self.dataset = dataset
         self.buckets = self._initial_occurrence_delivery(dataset)
 
     @override

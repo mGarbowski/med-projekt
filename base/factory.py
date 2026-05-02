@@ -5,11 +5,9 @@ from enum import Enum
 from .abstract_lcm import AbstractLCM
 from lcm.lcm import LCMAlgorithm
 from lcm.lcm_intersec import LCMAlgorithmIntersec
-from lcm.dataset import Dataset, DatasetIntersec
 from base.output import LCMOutputToFile, LCMOutputInMemory
 
 from lcm_opt.lcm import LCMAlgorithmOpt
-from lcm_opt.dataset import DatasetOpt
 
 from extern.lcm_spmf import LCMSpmf
 
@@ -53,29 +51,23 @@ class AlgorithmFactory:
 
         match algorithm_version:
             case AlgorithmVersion.CUSTOM:
-                with open(input_file) as f:
-                    dataset = Dataset.from_stream(f)
                 return LCMAlgorithm(
                     relative_minimum_support=min_support,
-                    dataset=dataset,
+                    input_file=input_file,
                     output=output_handler,
                 )
 
             case AlgorithmVersion.INTERSEC:
-                with open(input_file) as f:
-                    dataset = DatasetIntersec.from_stream(f)
                 return LCMAlgorithmIntersec(
                     relative_minimum_support=min_support,
-                    dataset=dataset,
+                    input_file=input_file,
                     output=output_handler,
                 )
 
             case AlgorithmVersion.OPTIMIZED:
-                with open(input_file) as f:
-                    dataset = DatasetOpt.from_stream(f)
                 return LCMAlgorithmOpt(
                     relative_minimum_support=min_support,
-                    dataset=dataset,
+                    input_file=input_file,
                     output=output_handler,
                 )
 

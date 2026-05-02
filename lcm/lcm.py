@@ -1,3 +1,4 @@
+from pathlib import Path
 import math
 from typing import override
 
@@ -16,13 +17,18 @@ class LCMAlgorithm(AbstractLCM):
     """
 
     def __init__(
-        self, relative_minimum_support: float, dataset: Dataset, output: LCMOutput
+        self, relative_minimum_support: float, input_file: Path, output: LCMOutput
     ):
         if not (0 <= relative_minimum_support <= 1):
             raise ValueError("Relative minimum support value must be between 0 and 1")
 
         self.output = output
         self.frequent_count = 0
+
+        with open(input_file) as f:
+            dataset = Dataset.from_stream(f)
+
+        self.dataset = dataset
         self.minimum_support = self._convert_relative_support_to_absolute(
             relative_minimum_support, dataset
         )
