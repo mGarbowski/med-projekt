@@ -32,7 +32,7 @@ class AggregatedValue:
     def from_values(cls, values: list[int | float], unit: str = ""):
         return cls(
             mean=mean(values),
-            std=stdev(values),
+            std=stdev(values) if len(values) > 1 else 0,
             unit=unit,
         )
 
