@@ -31,11 +31,9 @@ def _compute_spmf(
 
 def _compute_this(input_file: Path, output_file: Path, min_support: float) -> None:
     """Compute closed frequent itemsets using our LCM implementation."""
-    with open(input_file) as f:
-        dataset = Dataset.from_stream(f)
     output = LCMOutputToFile(output_file)
     lcm = LCMAlgorithm(
-        relative_minimum_support=min_support, dataset=dataset, output=output
+        relative_minimum_support=min_support, input_file=input_file, output=output
     )
     lcm.run()
 
@@ -44,22 +42,18 @@ def _compute_this_intersec(
     input_file: Path, output_file: Path, min_support: float
 ) -> None:
     """Compute closed frequent itemsets using our LCM with transactions intersections implementation."""
-    with open(input_file) as f:
-        dataset = DatasetIntersec.from_stream(f)
     output = LCMOutputToFile(output_file)
     lcm = LCMAlgorithmIntersec(
-        relative_minimum_support=min_support, dataset=dataset, output=output
+        relative_minimum_support=min_support, input_file=input_file, output=output
     )
     lcm.run()
 
 
 def _compute_this_opt(input_file: Path, output_file: Path, min_support: float) -> None:
     """Compute closed frequent itemsets using our optimized LCM implementation."""
-    with open(input_file) as f:
-        dataset = DatasetOpt.from_stream(f)
     output = LCMOutputToFile(output_file)
     lcm = LCMAlgorithmOpt(
-        relative_minimum_support=min_support, dataset=dataset, output=output
+        relative_minimum_support=min_support, input_file=input_file, output=output
     )
     lcm.run()
 
