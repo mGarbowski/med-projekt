@@ -113,12 +113,9 @@ class LCMAlgorithmOpt(AbstractLCM):
 
         # no need for item > item_e as valid_targets has only bigger elements
         for transaction in transactions_of_union:
-            active_items = set(transaction.items[transaction.offset + 1 :])
-
-            for item in active_items.intersection(
-                valid_targets
-            ):  # is item in active items
-                self.buckets[item].append(transaction)
+            for item in transaction.items[transaction.offset + 1 :]:
+                if item in valid_targets:
+                    self.buckets[item].append(transaction)
 
     @staticmethod
     def intersect_transactions(
