@@ -1,3 +1,4 @@
+import gc
 import math
 from pathlib import Path
 from typing import override
@@ -19,6 +20,7 @@ class LCMAlgorithmOpt(AbstractLCM):
     def __init__(
         self, relative_minimum_support: float, input_file: Path, output: LCMOutput
     ):
+        gc.disable()
         if not (0 <= relative_minimum_support <= 1):
             raise ValueError("Relative minimum support value must be between 0 and 1")
 
@@ -38,6 +40,7 @@ class LCMAlgorithmOpt(AbstractLCM):
     def close(self) -> None:
         """Delegates closing/saving to the output handler."""
         self.output.close()
+        gc.enable()
 
     def run(self):
         for transaction in self.dataset.transactions:
