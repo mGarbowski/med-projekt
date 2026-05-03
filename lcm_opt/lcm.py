@@ -76,7 +76,7 @@ class LCMAlgorithmOpt(AbstractLCM):
                     if self.is_item_in_all_transactions(transactions_of_union, item_k):
                         itemset.append(item_k)
 
-                support = sum(t.weight for t in transactions_of_union)
+                support = sum([t.weight for t in transactions_of_union])
                 self.output.save(ItemsetOpt(items=itemset, support=support))
 
                 self.anytime_database_reduction(
@@ -85,11 +85,11 @@ class LCMAlgorithmOpt(AbstractLCM):
                     frequent_items,  # , item
                 )
 
-                new_frequent_items = []
-                for item_k in frequent_items[idx + 1 :]:
-                    support_k = sum(t.weight for t in self.buckets[item_k])
-                    if support_k >= self.minimum_support:
-                        new_frequent_items.append(item_k)
+                new_frequent_items = [
+                    item_k
+                    for item_k in frequent_items[idx + 1 :]
+                    if sum([t.weight for t in self.buckets[item_k]]) >= self.minimum_support
+                ]
 
                 self.backtracking_lcm(
                     itemset, transactions_of_union, new_frequent_items, item_tail_idx
@@ -102,11 +102,9 @@ class LCMAlgorithmOpt(AbstractLCM):
         frequent_items: list[int],
         # item_e: int,
     ):
-        valid_targets = set()
-        for i in range(idx_in_frequent_items + 1, len(frequent_items)):
-            item = frequent_items[i]
+        valid_targets = set(frequent_items[idx_in_frequent_items + 1 :])
+        for item in valid_targets:
             self.buckets[item].clear()
-            valid_targets.add(item)
 
         if not valid_targets:
             return
@@ -151,29 +149,17 @@ class LCMAlgorithmOpt(AbstractLCM):
                     merged_dict[key][3].append(t.interior_intersection)
 
         # now create TransactionOpt objects
-        result = []
-        for key, (
-            orig_items,
-            new_offset,
-            total_weight,
-            sets_list,
-        ) in merged_dict.items():
-            if len(sets_list) == 1:
-                new_intersection = sets_list[0]  # no merge, just copy
-            else:
-                new_intersection = set.intersection(*sets_list)  # merge, intersec
-
-            # create final transaction
-            result.append(
-                TransactionOpt(
-                    items=orig_items,
-                    offset=new_offset,
-                    weight=total_weight,
-                    interior_intersection=new_intersection,
-                )
+        return [
+            TransactionOpt(
+                items=orig_items,
+                offset=new_offset,
+                weight=total_weight,
+                interior_intersection=(
+                    sets_list[0] if len(sets_list) == 1 else set.intersection(*sets_list)
+                ),
             )
-
-        return result
+            for orig_items, new_offset, total_weight, sets_list in merged_dict.values()
+        ]
 
     @staticmethod
     def is_ppc_extension(
