@@ -136,17 +136,16 @@ class LCMAlgorithmOpt(AbstractLCM):
                 key = t.items[pos:]  # active part of transaction
 
                 if key not in merged_dict:
-                    # first occurance, save data
                     merged_dict[key] = [
                         t.items,
                         pos,
                         t.weight,
-                        [t.interior_intersection],
+                        t.interior_intersection,
                     ]
                 else:
-                    # next occurance, update weight and add interior_intersection
-                    merged_dict[key][2] += t.weight
-                    merged_dict[key][3].append(t.interior_intersection)
+                    val = merged_dict[key]
+                    val[2] += t.weight
+                    val[3] = val[3].intersection(t.interior_intersection)
 
         # now create TransactionOpt objects
         return [
@@ -154,11 +153,9 @@ class LCMAlgorithmOpt(AbstractLCM):
                 items=orig_items,
                 offset=new_offset,
                 weight=total_weight,
-                interior_intersection=(
-                    sets_list[0] if len(sets_list) == 1 else set.intersection(*sets_list)
-                ),
+                interior_intersection=current_intersection,
             )
-            for orig_items, new_offset, total_weight, sets_list in merged_dict.values()
+            for orig_items, new_offset, total_weight, current_intersection in merged_dict.values()
         ]
 
     @staticmethod
