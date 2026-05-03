@@ -25,6 +25,14 @@ class TransactionOpt:
         else:
             self.interior_intersection = interior_intersection
 
+    def __eq__(self, other):
+        return (
+            self.items == other.items
+            and self.offset == other.offset
+            and self.weight == other.weight
+            and self.interior_intersection == other.interior_intersection
+        )
+    
     def item_position(self, item: int) -> int | None:
         # binary search is not better here
         try:
