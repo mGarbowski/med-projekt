@@ -1,6 +1,8 @@
 import sys
 from argparse import ArgumentParser
 from pathlib import Path
+import cProfile
+import pstats
 
 from base.factory import AlgorithmFactory, AlgorithmVersion
 
@@ -44,6 +46,9 @@ def main():
             file=sys.stderr,
         )
 
+    profiler = cProfile.Profile()
+    profiler.enable()
+
     algorithm = AlgorithmFactory.create(
         algorithm_version=AlgorithmVersion(args.algorithm),
         input_file=args.input,
@@ -56,6 +61,10 @@ def main():
     algorithm.run()
     algorithm.close()
 
+    profiler.disable()
+    stats = pstats.Stats(profiler)
+    stats.sort_stats(pstats.SortKey.CUMULATIVE)
+    stats.print_stats(20)
 
 if __name__ == "__main__":
     main()
