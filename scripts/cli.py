@@ -34,6 +34,7 @@ def main():
         default=Path("extern/spmf.jar"),
         help="Path to the spmf.jar file (only used for 'spmf' algorithm)",
     )
+    parser.add_argument("-p", "--profile", action="store_true")
 
     args = parser.parse_args()
     if not (0 <= args.minsup <= 1):
@@ -46,25 +47,42 @@ def main():
             file=sys.stderr,
         )
 
-    profiler = cProfile.Profile()
-    profiler.enable()
+    do_profile = args.profile
 
-    algorithm = AlgorithmFactory.create(
-        algorithm_version=AlgorithmVersion(args.algorithm),
-        input_file=args.input,
-        output_file=args.output,
-        min_support=args.minsup,
-        output_mode=args.output_mode,
-        spmf_jar=args.spmf_jar,
-    )
+    if do_profile:
+        profiler = cProfile.Profile()
+        profiler.enable()
 
-    algorithm.run()
-    algorithm.close()
+        algorithm = AlgorithmFactory.create(
+            algorithm_version=AlgorithmVersion(args.algorithm),
+            input_file=args.input,
+            output_file=args.output,
+            min_support=args.minsup,
+            output_mode=args.output_mode,
+            spmf_jar=args.spmf_jar,
+        )
 
-    profiler.disable()
-    stats = pstats.Stats(profiler)
-    stats.sort_stats(pstats.SortKey.CUMULATIVE)
-    stats.print_stats(25)
+        algorithm.run()
+        algorithm.close()
+
+        profiler.disable()
+        stats = pstats.Stats(profiler)
+        stats.sort_stats(pstats.SortKey.CUMULATIVE)
+        stats.print_stats(25)
+
+    else:
+        algorithm = AlgorithmFactory.create(
+            algorithm_version=AlgorithmVersion(args.algorithm),
+            input_file=args.input,
+            output_file=args.output,
+            min_support=args.minsup,
+            output_mode=args.output_mode,
+            spmf_jar=args.spmf_jar,
+        )
+
+        algorithm.run()
+        algorithm.close()
+
 
 
 if __name__ == "__main__":
