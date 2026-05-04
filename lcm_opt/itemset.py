@@ -9,4 +9,4 @@ class ItemsetOpt(AbstractItemset):
     support: int
 
     def to_spmf_line(self) -> str:
-        return f"{' '.join(str(item) for item in self.items)} #SUP: {self.support}"
+        return f"{' '.join(map(str, self.items))} #SUP: {self.support}"
