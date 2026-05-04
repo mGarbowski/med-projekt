@@ -32,7 +32,7 @@ class TransactionOpt:
             and self.weight == other.weight
             and self.interior_intersection == other.interior_intersection
         )
-    
+
     def item_position(self, item: int) -> int | None:
         # binary search is not better here
         try:

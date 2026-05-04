@@ -122,13 +122,7 @@ class TestLcm:
     def test_example_dataset(self, tmp_path):
         input_file = tmp_path / "input.txt"
 
-        input_file.write_text(
-            "1 3 4\n"
-            "2 3 5\n"
-            "1 2 3 5\n"
-            "2 5\n"
-            "1 2 3 5\n"
-        )
+        input_file.write_text("1 3 4\n2 3 5\n1 2 3 5\n2 5\n1 2 3 5\n")
         output_file = tmp_path / "output.txt"
         output = LCMOutputInMemory(output_file)
         lcm = LCMAlgorithm(0.4, input_file, output)

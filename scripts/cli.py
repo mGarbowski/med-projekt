@@ -64,7 +64,8 @@ def main():
     profiler.disable()
     stats = pstats.Stats(profiler)
     stats.sort_stats(pstats.SortKey.CUMULATIVE)
-    stats.print_stats(20)
+    stats.print_stats(25)
+
 
 if __name__ == "__main__":
     main()

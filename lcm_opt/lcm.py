@@ -33,7 +33,7 @@ class LCMAlgorithmOpt(AbstractLCM):
         self.minimum_support = self._convert_relative_support_to_absolute(
             relative_minimum_support, dataset
         )
-        
+
         self.buckets = self._initial_occurrence_delivery(dataset)
 
     @override
@@ -83,15 +83,14 @@ class LCMAlgorithmOpt(AbstractLCM):
                 self.output.save(ItemsetOpt(items=itemset, support=support))
 
                 self.anytime_database_reduction(
-                    transactions_of_union,
-                    idx,
-                    frequent_items,  # , item
+                    transactions_of_union, idx, frequent_items
                 )
 
                 new_frequent_items = [
                     item_k
                     for item_k in frequent_items[idx + 1 :]
-                    if sum([t.weight for t in self.buckets[item_k]]) >= self.minimum_support
+                    if sum([t.weight for t in self.buckets[item_k]])
+                    >= self.minimum_support
                 ]
 
                 self.backtracking_lcm(
@@ -103,7 +102,6 @@ class LCMAlgorithmOpt(AbstractLCM):
         transactions_of_union: list[TransactionOpt],
         idx_in_frequent_items: int,
         frequent_items: list[int],
-        # item_e: int,
     ):
         valid_targets = set(frequent_items[idx_in_frequent_items + 1 :])
         for item in valid_targets:
