@@ -139,7 +139,7 @@ class LCMAlgorithmIntersec(AbstractLCM):
         for item in first_t.interior_intersection:
             if (
                 item < e
-                and (len(prefix) == 0 or item not in prefix)  # TODO binary search
+                and (len(prefix) == 0 or item not in prefix)
                 and LCMAlgorithmIntersec.is_item_in_all_transactions_except_first(
                     transactions_of_union, item
                 )
@@ -160,7 +160,6 @@ class LCMAlgorithmIntersec(AbstractLCM):
     def is_item_in_all_transactions(
         transactions: list[TransactionIntersec], item: int
     ) -> bool:
-        # TODO binary search
         return all(
             item in transaction.interior_intersection for transaction in transactions
         )

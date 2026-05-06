@@ -41,14 +41,12 @@ class Transaction(AbstractTransaction):
         return self.items == other.items and self.offset == other.offset
 
     def item_position(self, item: int) -> int | None:
-        # TODO binary search
         try:
             return self.items.index(item, self.offset)
         except ValueError:
             return None
 
     def item_position_original_transaction(self, item: int) -> int | None:
-        # TODO binary search
         try:
             return self.original_transaction.items.index(item)
         except ValueError:
@@ -102,7 +100,6 @@ class TransactionIntersec(AbstractTransaction):
         return self.items == other.items and self.offset == other.offset
 
     def item_position(self, item: int) -> int | None:
-        # TODO binary search
         try:
             return self.items.index(item, self.offset)
         except ValueError:

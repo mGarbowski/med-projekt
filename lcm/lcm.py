@@ -138,7 +138,7 @@ class LCMAlgorithm(AbstractLCM):
         for item in first_t.items[: first_t.offset]:
             if (
                 item < e
-                and (len(prefix) == 0 or item not in prefix)  # TODO binary search
+                and (len(prefix) == 0 or item not in prefix)
                 and LCMAlgorithm.is_item_in_all_transactions_except_first(
                     transactions_of_union, item
                 )
@@ -158,7 +158,6 @@ class LCMAlgorithm(AbstractLCM):
 
     @staticmethod
     def is_item_in_all_transactions(transactions: list[Transaction], item: int) -> bool:
-        # TODO binary search
         return all(item in transaction.items for transaction in transactions)
 
     @staticmethod

@@ -7,5 +7,4 @@ def is_sorted(numbers: list[int]):
 
 
 def contains_after(numbers: list[int], element: int, after_idx: int) -> bool:
-    # TODO binary search
     return element in numbers[after_idx + 1 :]
