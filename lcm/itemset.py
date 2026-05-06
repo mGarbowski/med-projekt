@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 
 from .utils import is_sorted
+from base.abstract_itemset import AbstractItemset
 
 
 @dataclass
-class Itemset:
+class Itemset(AbstractItemset):
     items: list[int]
     support: int
 

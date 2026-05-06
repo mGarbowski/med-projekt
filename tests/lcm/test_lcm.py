@@ -4,7 +4,7 @@ from lcm.itemset import Itemset
 from lcm.dataset import Dataset
 from lcm.lcm import LCMAlgorithm
 from lcm.transaction import Transaction
-from lcm.output import LCMOutputInMemory
+from base.output import LCMOutputInMemory
 
 
 class TestLcm:
@@ -119,18 +119,13 @@ class TestLcm:
             == expected_absolute
         )
 
-    def test_example_dataset(self):
-        dataset = Dataset.from_lists(
-            [
-                [1, 3, 4],
-                [2, 3, 5],
-                [1, 2, 3, 5],
-                [2, 5],
-                [1, 2, 3, 5],
-            ]
-        )
-        output = LCMOutputInMemory()
-        lcm = LCMAlgorithm(0.4, dataset, output)
+    def test_example_dataset(self, tmp_path):
+        input_file = tmp_path / "input.txt"
+
+        input_file.write_text("1 3 4\n2 3 5\n1 2 3 5\n2 5\n1 2 3 5\n")
+        output_file = tmp_path / "output.txt"
+        output = LCMOutputInMemory(output_file)
+        lcm = LCMAlgorithm(0.4, input_file, output)
         lcm.run()
         result = output.itemsets
 

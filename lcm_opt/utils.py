@@ -7,4 +7,10 @@ def is_sorted(numbers: list[int]):
 
 
 def contains_after(numbers: list[int], element: int, after_idx: int) -> bool:
-    return element in numbers[after_idx + 1 :]
+    for i in range(after_idx + 1, len(numbers)):
+        val = numbers[i]
+        if val == element:
+            return True
+        if val > element:  # List is sorted
+            return False
+    return False

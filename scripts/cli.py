@@ -1,9 +1,10 @@
+import sys
 from argparse import ArgumentParser
 from pathlib import Path
+import cProfile
+import pstats
 
-from lcm.output import LCMOutputToFile
-from lcm.dataset import Dataset
-from lcm.lcm import LCMAlgorithm
+from base.factory import AlgorithmFactory, AlgorithmVersion
 
 
 def main():
@@ -11,19 +12,76 @@ def main():
     parser.add_argument("-i", "--input", type=Path, required=True)
     parser.add_argument("-o", "--output", type=Path, required=True)
     parser.add_argument("-s", "--minsup", type=float, required=True)
+    parser.add_argument(
+        "-a",
+        "--algorithm",
+        type=str,
+        choices=[e.value for e in AlgorithmVersion],
+        default=AlgorithmVersion.OPTIMIZED,
+        help="Algorithm implementation to use (default: 'optimized')",
+    )
+    parser.add_argument(
+        "-m",
+        "--output-mode",
+        type=str,
+        choices=["file", "memory"],
+        default="file",
+        help="Choose where to save itemsets during execution (default: 'file')",
+    )
+    parser.add_argument(
+        "--spmf-jar",
+        type=Path,
+        default=Path("extern/spmf.jar"),
+        help="Path to the spmf.jar file (only used for 'spmf' algorithm)",
+    )
+    parser.add_argument("-p", "--profile", action="store_true")
 
     args = parser.parse_args()
     if not (0 <= args.minsup <= 1):
         raise ValueError("Minimum support must be between 0 and 1")
 
-    with open(args.input) as input_file:
-        dataset = Dataset.from_stream(input_file)
+    if args.algorithm == "spmf":
+        print(
+            "WARNING: You are using the Java implementation. tracemalloc will only measure memory used by the Python script! "
+            "Memory allocated by the Java Virtual Machine (JVM) will not be tracked.",
+            file=sys.stderr,
+        )
 
-    output = LCMOutputToFile(args.output)
-    lcm = LCMAlgorithm(
-        relative_minimum_support=args.minsup, dataset=dataset, output=output
-    )
-    lcm.run()
+    do_profile = args.profile
+
+    if do_profile:
+        profiler = cProfile.Profile()
+        profiler.enable()
+
+        algorithm = AlgorithmFactory.create(
+            algorithm_version=AlgorithmVersion(args.algorithm),
+            input_file=args.input,
+            output_file=args.output,
+            min_support=args.minsup,
+            output_mode=args.output_mode,
+            spmf_jar=args.spmf_jar,
+        )
+
+        algorithm.run()
+        algorithm.close()
+
+        profiler.disable()
+        stats = pstats.Stats(profiler)
+        stats.sort_stats(pstats.SortKey.CUMULATIVE)
+        stats.print_stats(25)
+
+    else:
+        algorithm = AlgorithmFactory.create(
+            algorithm_version=AlgorithmVersion(args.algorithm),
+            input_file=args.input,
+            output_file=args.output,
+            min_support=args.minsup,
+            output_mode=args.output_mode,
+            spmf_jar=args.spmf_jar,
+        )
+
+        algorithm.run()
+        algorithm.close()
 
 
 if __name__ == "__main__":

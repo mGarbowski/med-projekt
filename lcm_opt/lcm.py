@@ -1,17 +1,18 @@
-from pathlib import Path
+import gc
 import math
+from pathlib import Path
 from typing import override
 
 from base.abstract_lcm import AbstractLCM
 from base.output import LCMOutput
-from .itemset import Itemset
+from .itemset import ItemsetOpt
 from .utils import contains_after
-from .transaction import Transaction
-from .dataset import Dataset
+from .transaction import TransactionOpt
+from .dataset import DatasetOpt
 
 
-class LCMAlgorithm(AbstractLCM):
-    """Implementation of Linear time Closed itemset Miner algorithm.
+class LCMAlgorithmOpt(AbstractLCM):
+    """Optimized implementation of Linear time Closed itemset Miner algorithm.
 
     For finding frequent, closed itemsets in a transaction database.
     """
@@ -19,26 +20,27 @@ class LCMAlgorithm(AbstractLCM):
     def __init__(
         self, relative_minimum_support: float, input_file: Path, output: LCMOutput
     ):
+        gc.disable()
         if not (0 <= relative_minimum_support <= 1):
             raise ValueError("Relative minimum support value must be between 0 and 1")
 
         self.output = output
-        self.frequent_count = 0
 
         with open(input_file) as f:
-            dataset = Dataset.from_stream(f)
-
+            dataset = DatasetOpt.from_stream(f)
         self.dataset = dataset
+
         self.minimum_support = self._convert_relative_support_to_absolute(
             relative_minimum_support, dataset
         )
-        self.dataset = dataset
+
         self.buckets = self._initial_occurrence_delivery(dataset)
 
     @override
     def close(self) -> None:
         """Delegates closing/saving to the output handler."""
         self.output.close()
+        gc.enable()
 
     def run(self):
         for transaction in self.dataset.transactions:
@@ -56,7 +58,7 @@ class LCMAlgorithm(AbstractLCM):
     def backtracking_lcm(
         self,
         prefix: list[int],
-        transactions_with_prefix: list[Transaction],
+        transactions_with_prefix: list[TransactionOpt],
         frequent_items: list[int],
         prefix_tail_idx: int,
     ):
@@ -77,19 +79,19 @@ class LCMAlgorithm(AbstractLCM):
                     if self.is_item_in_all_transactions(transactions_of_union, item_k):
                         itemset.append(item_k)
 
-                self.output.save(
-                    Itemset(items=itemset, support=len(transactions_of_union))
-                )
+                support = sum([t.weight for t in transactions_of_union])
+                self.output.save(ItemsetOpt(items=itemset, support=support))
 
                 self.anytime_database_reduction(
-                    transactions_of_union, idx, frequent_items, item
+                    transactions_of_union, idx, frequent_items
                 )
 
-                new_frequent_items = []
-                for item_k in frequent_items[idx + 1 :]:
-                    support_k = len(self.buckets[item_k])
-                    if support_k >= self.minimum_support:
-                        new_frequent_items.append(item_k)
+                new_frequent_items = [
+                    item_k
+                    for item_k in frequent_items[idx + 1 :]
+                    if sum([t.weight for t in self.buckets[item_k]])
+                    >= self.minimum_support
+                ]
 
                 self.backtracking_lcm(
                     itemset, transactions_of_union, new_frequent_items, item_tail_idx
@@ -97,76 +99,105 @@ class LCMAlgorithm(AbstractLCM):
 
     def anytime_database_reduction(
         self,
-        transactions_of_union: list[Transaction],
+        transactions_of_union: list[TransactionOpt],
         idx_in_frequent_items: int,
         frequent_items: list[int],
-        item_e: int,
     ):
-        for item in frequent_items[idx_in_frequent_items + 1 :]:
-            self.buckets[item] = []
+        valid_targets = set(frequent_items[idx_in_frequent_items + 1 :])
+        for item in valid_targets:
+            self.buckets[item].clear()
 
+        if not valid_targets:
+            return
+
+        # no need for item > item_e as valid_targets has only bigger elements
         for transaction in transactions_of_union:
-            for item in transaction.items[: transaction.offset : -1]:
-                if item > item_e and item in frequent_items:
+            for item in transaction.items[transaction.offset + 1 :]:
+                if item in valid_targets:
                     self.buckets[item].append(transaction)
 
     @staticmethod
     def intersect_transactions(
-        transactions: list[Transaction], item: int
-    ) -> list[Transaction]:
-        """Get transactions containing the union of items
+        transactions: list[TransactionOpt], item: int
+    ) -> list[TransactionOpt]:
+        """
+        Get transactions containing the union of items
         transactions is a list of transactions of itemset P
         this calculates the transaction list for itemset union(P, {item})
-        and truncates the transactions to keep what appears after item
+        also merges identical transactions combining their weigth and interior_intersection
         """
-        transactions_of_union = []
-        for transaction in transactions:
-            item_position = transaction.item_position(item)  # search after offset
-            if item_position is not None:
-                transactions_of_union.append(
-                    Transaction.with_offset(transaction, item_position)
-                )
+        merged_dict = {}  # for groupping transactions, key is an active part of transaciton (tuple - hashable)
 
-        return transactions_of_union
+        for t in transactions:
+            if item not in t.interior_intersection:
+                continue
+
+            pos = t.item_position(item)
+            if pos is not None:
+                key = t.items[pos:]  # active part of transaction
+
+                if key not in merged_dict:
+                    merged_dict[key] = [
+                        t.items,
+                        pos,
+                        t.weight,
+                        t.interior_intersection,
+                    ]
+                else:
+                    val = merged_dict[key]
+                    val[2] += t.weight
+                    val[3] = val[3].intersection(t.interior_intersection)
+
+        # now create TransactionOpt objects
+        return [
+            TransactionOpt(
+                items=orig_items,
+                offset=new_offset,
+                weight=total_weight,
+                interior_intersection=current_intersection,
+            )
+            for orig_items, new_offset, total_weight, current_intersection in merged_dict.values()
+        ]
 
     @staticmethod
     def is_ppc_extension(
-        prefix: list[int], transactions_of_union: list[Transaction], e: int
+        prefix: list[int], transactions_of_union: list[TransactionOpt], e: int
     ) -> bool:
         """Check if union(prefix, {e}) is a prefix-preserving closure extension"""
         first_t = transactions_of_union[0]
-        for item in first_t.items[: first_t.offset]:
-            if (
-                item < e
-                and (len(prefix) == 0 or item not in prefix)
-                and LCMAlgorithm.is_item_in_all_transactions_except_first(
-                    transactions_of_union, item
-                )
-            ):
+        check = LCMAlgorithmOpt.is_item_in_all_transactions_except_first  # local ref
+
+        for item in first_t.interior_intersection:
+            if item < e and item not in prefix and check(transactions_of_union, item):
                 return False
         return True
 
     @staticmethod
     def is_item_in_all_transactions_except_first(
-        transactions: list[Transaction], item: int
+        transactions: list[TransactionOpt], item: int
     ):
         for transaction in transactions[1:]:
-            if transaction.item_position_original_transaction(item) is None:
+            if item not in transaction.interior_intersection:
                 return False
-
         return True
 
     @staticmethod
-    def is_item_in_all_transactions(transactions: list[Transaction], item: int) -> bool:
-        return all(item in transaction.items for transaction in transactions)
+    def is_item_in_all_transactions(
+        transactions: list[TransactionOpt], item: int
+    ) -> bool:
+        for transaction in transactions:
+            if item not in transaction.interior_intersection:
+                return False
+        return True
 
     @staticmethod
     def _initial_occurrence_delivery(
-        dataset: Dataset,
-    ) -> list[list[Transaction]]:
+        dataset: DatasetOpt,
+    ) -> list[list[TransactionOpt]]:
         buckets = [[] for _ in range(dataset.max_item + 1)]
+        transactions = dataset.transactions
 
-        for transaction in dataset.transactions:
+        for transaction in transactions:
             for item in transaction.items:
                 buckets[item].append(transaction)
 
@@ -174,7 +205,7 @@ class LCMAlgorithm(AbstractLCM):
 
     @staticmethod
     def _convert_relative_support_to_absolute(
-        relative_support: float, dataset: Dataset
+        relative_support: float, dataset: DatasetOpt
     ) -> int:
         """Converting percentage to number of items.
 
