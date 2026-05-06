@@ -84,6 +84,5 @@ def main():
         algorithm.close()
 
 
-
 if __name__ == "__main__":
     main()

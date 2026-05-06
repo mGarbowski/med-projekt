@@ -4,10 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from lcm.dataset import Dataset, DatasetIntersec
 from lcm.lcm import LCMAlgorithm
 from lcm.lcm_intersec import LCMAlgorithmIntersec
-from lcm_opt.dataset import DatasetOpt
 from lcm_opt.lcm import LCMAlgorithmOpt
 from extern.lcm_spmf import LCMSpmf
 from base.output import LCMOutputToFile

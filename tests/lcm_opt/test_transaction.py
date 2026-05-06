@@ -1,5 +1,4 @@
 from copy import deepcopy
-import pytest
 
 from lcm_opt.transaction import TransactionOpt
 

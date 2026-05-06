@@ -6,7 +6,7 @@ from lcm_opt.transaction import TransactionOpt
 
 class TestDataset:
     def test_from_lists(self):
-        item_lists = [(1, 3, 4), (2, 3)]
+        item_lists: list[tuple[int, ...]] = [(1, 3, 4), (2, 3)]
         expected_transactions = [TransactionOpt((1, 3, 4)), TransactionOpt((2, 3))]
         dataset = DatasetOpt.from_lists(item_lists)
         assert dataset.transactions == expected_transactions
