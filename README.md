@@ -140,3 +140,126 @@ Zoptymalizowano funkcję `contains_after()` w module `utils` poprzez dodanie wcz
 Zoptymalizowano warunek logiczny w metodzie `is_ppc_extension()` poprzez eliminację redundantnego warunku - usunięcie `len(prefix) == 0`, który i tak pokrywa `item not in prefix`.
 * **Miejsce zastosowania:** Metoda `is_ppc_extension()` w klasie `LCMAlgorithmOpt`.
 * **Efekt:** Nieznaczne, ale mierzalne przyspieszenie, szczególnie w gęstych zbiorach danych, gdzie `is_ppc_extension()` jest wywoływana bardzo często.
+
+
+## Benchmarki
+
+W celu porównania wydajności zaimplementowanych wersji algorytmu przeprowadzono serię benchmarków mierzących czas wykonania oraz zużycie pamięci dla różnych wartości minimalnego wsparcia.
+
+Porównano następujące implementacje:
+
+* **SPMF** — implementacja biblioteczna,
+* **custom** — podstawowa własna implementacja algorytmu,
+* **intersec** — wersja wykorzystująca scalanie/przecięcia transakcji,
+* **optimized (file)** — wersja zoptymalizowana z bieżącym zapisem wyników do pliku,
+* **optimized (memory)** — wersja zoptymalizowana z buforowaniem wyników w pamięci.
+
+Dla każdej konfiguracji benchmark został wykonany **trzykrotnie**, a w tabelach przedstawiono średni czas wykonania wraz z odchyleniem standardowym.
+
+Pomiary pamięci zostały wykonane przy użyciu modułu `tracemalloc`.
+W przypadku implementacji **SPMF** pomiary zużycia pamięci nie zostały uwzględnione, ponieważ algorytm wykonywany jest wewnątrz maszyny wirtualnej JVM, a użyte narzędzia profilujące mierzyły wyłącznie pamięć alokowaną po stronie interpretera Python.
+
+Implementacje przetestowano na trzech różnych typach zbiorów:
+- [**`Retail`**](#zbiór-danych-retail) - zbiór rzadki - bardzo mało pokrywających się transakcji
+- [**`Chess`**](#zbiór-danych-chess) - zbiór gęsty - wiele pokrywających się transakcji
+- [**`Pubmsb`**](#zbiór-danych-pubmsb) - zbiór ogólny - średnio gęsty z zdecydowanie dłuższymi transakcjami
+
+Wartości wsparcia dla przeprowadzonych pomiarów zostały dobrane odpowiednio dla każdego zbioru, aby pasowały do jego charakterystyki.
+
+Wszystkie wykorzystane zbiory pochdzą ze strony [https://www.philippe-fournier-viger.com/spmf/index.php?link=datasets.php#d2](https://www.philippe-fournier-viger.com/spmf/index.php?link=datasets.php#d2).
+
+---
+
+### Zbiór danych: `Retail`
+
+Zbiór danych o następującej charakterystyce:
+
+| Parametr                              | Wartość |
+| ------------------------------------- | ------- |
+| Liczba transakcji                     | `X`     |
+| Liczba unikalnych elementów           | `X`     |
+| Średnia liczba elementów w transakcji | `X`     |
+| Gęstość zbioru                        | `X`     |
+
+#### Czas wykonania
+
+| Implementacja | Tryb zapisu   | 0.9      | 0.8      | 0.7      | 0.6      |
+| --------- | ------ | -------- | -------- | -------- | -------- |
+| custom    | file   | X ± X s | X ± X s | X ± X s | X ± X s |
+| intersec  | file   | X ± X s | X ± X s | X ± X s | X ± X s |
+| optimized | file   | X ± X s | X ± X s | X ± X s | X ± X s |
+| optimized | memory | X ± X s | X ± X s | X ± X s | X ± X s |
+| spmf      | file   | X ± X s | X ± X s | X ± X s | X ± X s |
+
+#### Maksymalne zużycie pamięci
+
+| Implementacja | Tryb zapisu   | 0.9       | 0.8       | 0.7       | 0.6       |
+| --------- | ------ | --------- | --------- | --------- | --------- |
+| custom    | file   | X ± X KiB | X ± X KiB | X ± X KiB | X ± X KiB |
+| intersec  | file   | X ± X KiB | X ± X KiB | X ± X KiB | X ± X KiB |
+| optimized | file   | X ± X KiB | X ± X KiB | X ± X KiB | X ± X KiB |
+| optimized | memory | X ± X KiB | X ± X KiB | X ± X KiB | X ± X KiB |
+
+---
+
+### Zbiór danych: `Chess`
+
+Zbiór danych o następującej charakterystyce:
+
+| Parametr                              | Wartość |
+| ------------------------------------- | ------- |
+| Liczba transakcji                     | `X`     |
+| Liczba unikalnych elementów           | `X`     |
+| Średnia liczba elementów w transakcji | `X`     |
+| Gęstość zbioru                        | `X`     |
+
+#### Czas wykonania
+
+| Implementacja | Tryb zapisu   | 0.9      | 0.8      | 0.7      | 0.6      |
+| --------- | ------ | -------- | -------- | -------- | -------- |
+| custom    | file   | X ± X s | X ± X s | X ± X s | X ± X s |
+| intersec  | file   | X ± X s | X ± X s | X ± X s | X ± X s |
+| optimized | file   | X ± X s | X ± X s | X ± X s | X ± X s |
+| optimized | memory | X ± X s | X ± X s | X ± X s | X ± X s |
+| spmf      | file   | X ± X s | X ± X s | X ± X s | X ± X s |
+
+#### Maksymalne zużycie pamięci
+
+| Implementacja | Tryb zapisu   | 0.9       | 0.8       | 0.7       | 0.6       |
+| --------- | ------ | --------- | --------- | --------- | --------- |
+| custom    | file   | X ± X KiB | X ± X KiB | X ± X KiB | X ± X KiB |
+| intersec  | file   | X ± X KiB | X ± X KiB | X ± X KiB | X ± X KiB |
+| optimized | file   | X ± X KiB | X ± X KiB | X ± X KiB | X ± X KiB |
+| optimized | memory | X ± X KiB | X ± X KiB | X ± X KiB | X ± X KiB |
+
+---
+
+### Zbiór danych: `Pubmsb`
+
+Zbiór danych o następującej charakterystyce:
+
+| Parametr                              | Wartość |
+| ------------------------------------- | ------- |
+| Liczba transakcji                     | `X`     |
+| Liczba unikalnych elementów           | `X`     |
+| Średnia liczba elementów w transakcji | `X`     |
+| Gęstość zbioru                        | `X`     |
+
+#### Czas wykonania
+
+| Implementacja | Tryb zapisu   | 0.9      | 0.8      | 0.7      | 0.6      |
+| --------- | ------ | -------- | -------- | -------- | -------- |
+| custom    | file   | X ± X s | X ± X s | X ± X s | X ± X s |
+| intersec  | file   | X ± X s | X ± X s | X ± X s | X ± X s |
+| optimized | file   | X ± X s | X ± X s | X ± X s | X ± X s |
+| optimized | memory | X ± X s | X ± X s | X ± X s | X ± X s |
+| spmf      | file   | X ± X s | X ± X s | X ± X s | X ± X s |
+
+#### Maksymalne zużycie pamięci
+
+| Implementacja | Tryb zapisu   | 0.9       | 0.8       | 0.7       | 0.6       |
+| --------- | ------ | --------- | --------- | --------- | --------- |
+| custom    | file   | X ± X KiB | X ± X KiB | X ± X KiB | X ± X KiB |
+| intersec  | file   | X ± X KiB | X ± X KiB | X ± X KiB | X ± X KiB |
+| optimized | file   | X ± X KiB | X ± X KiB | X ± X KiB | X ± X KiB |
+| optimized | memory | X ± X KiB | X ± X KiB | X ± X KiB | X ± X KiB |
