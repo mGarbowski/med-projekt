@@ -2,12 +2,13 @@ import os
 import sys
 import tempfile
 import tracemalloc
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentTypeError
 from dataclasses import dataclass
 from pathlib import Path
 from statistics import mean, stdev
 from time import perf_counter_ns
 from typing import Literal
+from tqdm import tqdm
 
 from base.factory import AlgorithmFactory, AlgorithmVersion
 
@@ -25,14 +26,15 @@ class AggregatedValue:
     std: float
     unit: str = ""
 
-    def __str__(self):
-        return f"{self.mean:.2f} ± {self.std:.2f} {self.unit}"
+    def __str__(self) -> str:
+        suffix = f" {self.unit}" if self.unit else ""
+        return f"{self.mean:.2f} ± {self.std:.2f}{suffix}"
 
     @classmethod
     def from_values(cls, values: list[int | float], unit: str = ""):
         return cls(
             mean=mean(values),
-            std=stdev(values) if len(values) > 1 else 0,
+            std=stdev(values) if len(values) > 1 else 0.0,
             unit=unit,
         )
 
@@ -45,8 +47,10 @@ class BenchmarkResult:
 
     @classmethod
     def aggregate(cls, results: list[SingleBenchmarkResult]):
+        if not results:
+            raise ValueError("No benchmark results to aggregate.")
         return cls(
-            time=AggregatedValue.from_values([r.time_ns / 1e6 for r in results], "ms"),
+            time=AggregatedValue.from_values([r.time_ns / 1e9 for r in results], "s"),
             mem_delta_current=AggregatedValue.from_values(
                 [r.mem_delta_current / 1024 for r in results], "KiB"
             ),
@@ -59,6 +63,29 @@ class BenchmarkResult:
         return f"Time: {self.time}\nPeak memory use: {self.mem_after_peak}\n"
 
 
+
+def parse_supports(raw: str) -> list[float]:
+    supports: list[float] = []
+    for part in raw.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        try:
+            value = float(part)
+        except ValueError as exc:
+            raise ArgumentTypeError(f"Invalid support value: {part!r}") from exc
+
+        if not 0 < value <= 1:
+            raise ArgumentTypeError(f"Support must be in (0, 1], got {value}")
+
+        supports.append(value)
+
+    if not supports:
+        raise ArgumentTypeError("Provide at least one support, e.g. 0.6,0.7,0.8")
+
+    return supports
+
+
 def benchmark_run(
     dataset_file: Path,
     min_support: float,
@@ -66,13 +93,17 @@ def benchmark_run(
     output_mode: Literal["file", "memory"],
     spmf_jar: Path,
 ) -> SingleBenchmarkResult:
-    tracemalloc.start()
-    tracemalloc.reset_peak()
-    time_start = perf_counter_ns()
-    before_current, before_peak = tracemalloc.get_traced_memory()
 
-    with tempfile.NamedTemporaryFile(delete_on_close=True) as output_file:
-        output_path = Path(output_file.name)
+    fd, tmp_name = tempfile.mkstemp(prefix="benchmark_", suffix=".txt")
+    os.close(fd)
+    output_path = Path(tmp_name)
+
+    algorithm = None
+    try:
+        tracemalloc.start()
+        tracemalloc.reset_peak()
+        time_start = perf_counter_ns()
+        before_current, _ = tracemalloc.get_traced_memory()
 
         algorithm = AlgorithmFactory.create(
             algorithm_version=AlgorithmVersion(algorithm_version),
@@ -83,24 +114,32 @@ def benchmark_run(
             spmf_jar=spmf_jar,
         )
         algorithm.run()
-        algorithm.close()
+        after_current, after_peak = tracemalloc.get_traced_memory()
+        time_end = perf_counter_ns()
 
-    after_current, after_peak = tracemalloc.get_traced_memory()
-    time_end = perf_counter_ns()
-    tracemalloc.stop()
-
-    return SingleBenchmarkResult(
-        time_ns=time_end - time_start,
-        mem_after_peak=after_peak,
-        mem_delta_current=after_current - before_current,
-    )
+        return SingleBenchmarkResult(
+            time_ns=time_end - time_start,
+            mem_after_peak=after_peak,
+            mem_delta_current=after_current - before_current,
+        )
+    finally:
+        if algorithm is not None:
+            algorithm.close()
+        tracemalloc.stop()
+        output_path.unlink(missing_ok=True)
 
 
 def main():
     parser = ArgumentParser()
     parser.add_argument("-i", "--input", type=Path, required=True)
-    parser.add_argument("-s", "--minsup", type=float, required=True)
-    parser.add_argument("-n", "--num_samples", type=int, default=100)
+    parser.add_argument("-n", "--num_samples", type=int, default=3)
+    parser.add_argument(
+        "-s",
+        "--minsup",
+        type=parse_supports,
+        required=True,
+        help="Comma-separated list of supports, e.g. 0.6,0.7,0.8,0.9",
+    )
     parser.add_argument(
         "-a",
         "--algorithm",
@@ -123,10 +162,16 @@ def main():
         default=Path("extern/spmf.jar"),
         help="Path to the spmf.jar file (only used for 'spmf' algorithm)",
     )
+    parser.add_argument(
+        "--readme",
+        action="store_true",
+        help="Print a Markdown-ready table row instead of a verbose summary",
+    )
 
     args = parser.parse_args()
-    if not (0 <= args.minsup <= 1):
-        raise ValueError("Minimum support must be between 0 and 1")
+
+    if not (0 < args.num_samples):
+        raise ValueError("Number of samples must be > 0")
 
     if os.environ.get("PYTHONOPTIMIZE", "") != "1":
         print(
@@ -141,15 +186,69 @@ def main():
             file=sys.stderr,
         )
 
-    results = [
-        benchmark_run(
-            args.input, args.minsup, args.algorithm, args.output_mode, args.spmf_jar
-        )
-        for _ in range(args.num_samples)
-    ]
+    support_results: list[tuple[float, BenchmarkResult]] = []
 
-    aggregate_results = BenchmarkResult.aggregate(results)
-    print(aggregate_results.summary())
+    total_runs = len(args.minsup) * args.num_samples
+
+    with tqdm(total=total_runs, desc="Benchmarking", unit="run") as pbar:
+        for support in args.minsup:
+            results: list[SingleBenchmarkResult] = []
+
+            for sample_idx in range(args.num_samples):
+                pbar.set_postfix(
+                    algorithm=args.algorithm,
+                    mode=args.output_mode,
+                    support=support,
+                    sample=f"{sample_idx + 1}/{args.num_samples}",
+                )
+
+                result = benchmark_run(
+                    args.input,
+                    support,
+                    args.algorithm,
+                    args.output_mode,
+                    args.spmf_jar,
+                )
+
+                results.append(result)
+                pbar.update(1)
+
+            support_results.append((support, BenchmarkResult.aggregate(results)))
+
+    if args.readme:
+        header = ["algorithm", "mode"] + [
+            f"{s:g}" for s, _ in support_results
+        ]
+
+        time_row = [
+            args.algorithm,
+            args.output_mode,
+        ] + [
+            str(r.time) for _, r in support_results
+        ]
+
+        memory_row = [
+            args.algorithm,
+            args.output_mode,
+        ] + [
+            str(r.mem_after_peak) for _, r in support_results
+        ]
+
+        print("# Time")
+        print("| " + " | ".join(header) + " |")
+        print("| " + " | ".join(["---"] * len(header)) + " |")
+        print("| " + " | ".join(time_row) + " |")
+
+        print()
+
+        print("# Memory")
+        print("| " + " | ".join(header) + " |")
+        print("| " + " | ".join(["---"] * len(header)) + " |")
+        print("| " + " | ".join(memory_row) + " |")
+    else:
+        for support, aggregate_result in support_results:
+            print(f"Support = {support:g}")
+            print(aggregate_result.summary())
 
 
 if __name__ == "__main__":

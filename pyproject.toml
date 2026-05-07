@@ -12,6 +12,7 @@ dependencies = [
     "line-profiler>=5.0.2",
     "pyinstrument>=5.1.2",
     "scalene>=2.2.1",
+    "tqdm>=4.67.3",
 ]
 
 [dependency-groups]
