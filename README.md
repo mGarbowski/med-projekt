@@ -49,20 +49,6 @@ Termin do 16 czerwca. Bardzo zachęcam do przedstawienia wcześniej (nawet kilka
     * asercje można całkiem wyłączyć ustawiając zmienną środowiskową `PYTHONOPTIMIZE=1`
     * (to już jest załatwione jak się uruchamia `just profile`)
 
-## TODO
-
-* Optymalizacje algorytmu
-    * na pewno wyszukiwanie binarne w wielu miejscach
-    * aktualna implementacja jest wzorowana na SPMF
-    * chyba dałoby się wyrzucić referencję `original_transaction` z klasy `Transaction`
-    * zapisy wyników do pliku pewnie można by jakoś buforować
-* Na jakich zbiorach profilować algorytm?
-    * te, które są dołączone mają po kilka przykładów
-* Jak profilować algorytm?
-    * czy ładowanie zbioru danych też liczymy
-    * czy profilujemy z zapisywaniem wyników do pliku (więcej czasu) czy z przechowywaniem wyników w pamięci (więcej
-      pamięci)
-
 ## Materiały
 
 * [Dokumentacja SPMF](https://www.philippe-fournier-viger.com/spmf/)
