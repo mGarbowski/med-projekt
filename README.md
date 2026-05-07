@@ -20,8 +20,10 @@
    danych.
 
 Proszę o zgłoszenie się do mnie w celu przydziału algorytmu (mailowo, teams, lub osobiście podczas konsultacji).
+
 ---
-Proszę implementować algorytm LCM (https://www.philippe-fournier-viger.com/spmf/LCM2.pdf) do odkrywania zbiorów
+
+Proszę zaimplementować algorytm LCM (https://www.philippe-fournier-viger.com/spmf/LCM2.pdf) do odkrywania zbiorów
 zamkniętych.
 Termin do 16 czerwca. Bardzo zachęcam do przedstawienia wcześniej (nawet kilkakrotnie) cząstkowych wyników.
 
@@ -176,10 +178,10 @@ Zbiór danych o następującej charakterystyce:
 
 | Parametr                              | Wartość |
 | ------------------------------------- | ------- |
-| Liczba transakcji                     | `X`     |
-| Liczba unikalnych elementów           | `X`     |
-| Średnia liczba elementów w transakcji | `X`     |
-| Gęstość zbioru                        | `X`     |
+| Liczba transakcji                     | `88 162`|
+| Liczba unikalnych elementów           | `16 470`|
+| Średnia liczba elementów w transakcji | `10,30` |
+| Gęstość zbioru                        | `0,06 %`|
 
 #### Czas wykonania
 
@@ -208,10 +210,10 @@ Zbiór danych o następującej charakterystyce:
 
 | Parametr                              | Wartość |
 | ------------------------------------- | ------- |
-| Liczba transakcji                     | `X`     |
-| Liczba unikalnych elementów           | `X`     |
-| Średnia liczba elementów w transakcji | `X`     |
-| Gęstość zbioru                        | `X`     |
+| Liczba transakcji                     | `3 196` |
+| Liczba unikalnych elementów           | `75`    |
+| Średnia liczba elementów w transakcji | `37`    |
+| Gęstość zbioru                        | `49,33 %`|
 
 #### Czas wykonania
 
@@ -240,10 +242,10 @@ Zbiór danych o następującej charakterystyce:
 
 | Parametr                              | Wartość |
 | ------------------------------------- | ------- |
-| Liczba transakcji                     | `X`     |
-| Liczba unikalnych elementów           | `X`     |
-| Średnia liczba elementów w transakcji | `X`     |
-| Gęstość zbioru                        | `X`     |
+| Liczba transakcji                     | `49 046`|
+| Liczba unikalnych elementów           | `2113`  |
+| Średnia liczba elementów w transakcji | `74`    |
+| Gęstość zbioru                        | `3,50 %`|
 
 #### Czas wykonania
 
@@ -263,3 +265,8 @@ Zbiór danych o następującej charakterystyce:
 | intersec  | file   | X ± X KiB | X ± X KiB | X ± X KiB | X ± X KiB |
 | optimized | file   | X ± X KiB | X ± X KiB | X ± X KiB | X ± X KiB |
 | optimized | memory | X ± X KiB | X ± X KiB | X ± X KiB | X ± X KiB |
+
+
+### Analiza wyników
+
+**TODO**
