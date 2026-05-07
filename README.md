@@ -151,15 +151,15 @@ W celu porównania wydajności zaimplementowanych wersji algorytmu przeprowadzon
 Porównano następujące implementacje:
 
 * **SPMF** — implementacja biblioteczna,
-* **custom** — podstawowa własna implementacja algorytmu,
 * **intersec** — wersja wykorzystująca scalanie/przecięcia transakcji,
-* **optimized (file)** — wersja zoptymalizowana z bieżącym zapisem wyników do pliku,
-* **optimized (memory)** — wersja zoptymalizowana z buforowaniem wyników w pamięci.
+* **optimized** — wersja zoptymalizowana,
 
-Dla każdej konfiguracji benchmark został wykonany **trzykrotnie**, a w tabelach przedstawiono średni czas wykonania wraz z odchyleniem standardowym.
+Dla naszych implementacji porównujemy działanie z zapisem wyników do pliku i z buforowaniem w pamięci.
+
+Dla każdej konfiguracji benchmark został wykonany 25 razy, a w tabelach przedstawiono średni czas wykonania wraz z odchyleniem standardowym.
 
 Pomiary pamięci zostały wykonane przy użyciu modułu `tracemalloc`.
-W przypadku implementacji **SPMF** pomiary zużycia pamięci nie zostały uwzględnione, ponieważ algorytm wykonywany jest wewnątrz maszyny wirtualnej JVM, a użyte narzędzia profilujące mierzyły wyłącznie pamięć alokowaną po stronie interpretera Python.
+Dla implementacji SPMF podajemy wartość zużycia pamięci zwracaną przez bibliotekę SPMF.
 
 Implementacje przetestowano na trzech różnych typach zbiorów:
 - [**`Retail`**](#zbiór-danych-retail) - zbiór rzadki - bardzo mało pokrywających się transakcji
@@ -168,7 +168,7 @@ Implementacje przetestowano na trzech różnych typach zbiorów:
 
 Wartości wsparcia dla przeprowadzonych pomiarów zostały dobrane odpowiednio dla każdego zbioru, aby pasowały do jego charakterystyki.
 
-Wszystkie wykorzystane zbiory pochdzą ze strony [https://www.philippe-fournier-viger.com/spmf/index.php?link=datasets.php#d2](https://www.philippe-fournier-viger.com/spmf/index.php?link=datasets.php#d2).
+Wszystkie wykorzystane zbiory pochodzą ze strony [https://www.philippe-fournier-viger.com/spmf/index.php?link=datasets.php#d2](https://www.philippe-fournier-viger.com/spmf/index.php?link=datasets.php#d2).
 
 ---
 
@@ -268,3 +268,14 @@ Zbiór danych o następującej charakterystyce:
 | Optimized (file)   | 242.13 ± 0.00  |
 | Optimized (memory) | 242.12 ± 0.00  |
 | SPMF (file)        | 601.65 ± 43.23 |
+
+
+## Komentarz do wyników
+* Zoptymalizowana wersja algorytmu osiąga lepsze wyniki niż implementacja SPMF dla
+  * gęstego zbioru Chess, ale tylko dla wsparcia 70% i 80%, nieco słąbszy wynik przy 90%
+  * rzadszego zbioru Pubmsb
+* SPMF jest natomiast zdecydowanie szybszy na bardzo rzadkim zbiorze Retail
+* Obliczanie zużycia pamięci w naszym projekcie i SPMF używa różnej metodologii, więc wyniki nie są bezpośrednio porównywalne
+* Tylko w określonych przypadkach (np. Chess, optimized, 70%) obserwujemy spodziewaną zależność względem wariantu zapisu wyników:
+  * zapis do pliku - dłuższy czas, mniejsze zużycie pamięci
+  * buforowanie w pamięci - krótszy czas, większe zużycie pamięci
